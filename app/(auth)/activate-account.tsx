@@ -26,7 +26,7 @@ const ActivateAccount = () => {
       setError("");
       await activateAccount(password);
       setPassword("");
-      router.replace("/(public)/about");
+      router.replace("/(public)");
     } catch (err) {
       setError("Activation failed. Please try again.");
     }

@@ -27,7 +27,7 @@ const Login = () => {
     try {
       setError("");
       await login(studentId, accessKey);
-      router.replace("/(protected)");
+      router.replace("/(public)");
     } catch (err) {
       setError("Authentication failed. Please check your credentials.");
     }
