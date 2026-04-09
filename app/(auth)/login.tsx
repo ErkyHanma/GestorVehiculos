@@ -12,11 +12,16 @@ import {
 } from "react-native";
 
 const Login = () => {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, isAuthenticated } = useAuth();
   const [studentId, setStudentId] = useState("");
   const [accessKey, setAccessKey] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+
+  if (isAuthenticated) {
+    router.replace("/(public)");
+    return null;
+  }
 
   const handleLogin = async () => {
     if (!studentId || !accessKey) {
