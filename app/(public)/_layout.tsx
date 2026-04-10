@@ -1,4 +1,4 @@
-import HeaderMenu from "@/components/auth/HeaderMenu";
+import HeaderMenu from "@/components/HeaderMenu";
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 
@@ -8,6 +8,8 @@ export default function PublicTabsLayout() {
       screenOptions={{
         tabBarStyle: {
           backgroundColor: "#0a0e14",
+          borderTopColor: "rgba(137, 172, 255, 0.15)",
+          borderTopWidth: 1,
         },
 
         tabBarItemStyle: {
@@ -16,7 +18,7 @@ export default function PublicTabsLayout() {
 
         tabBarActiveTintColor: "#89acff",
         tabBarInactiveTintColor: "#9CA3AF",
-        
+
         headerShown: true,
         headerStyle: {
           backgroundColor: "#0a0e14",
