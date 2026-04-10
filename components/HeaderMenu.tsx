@@ -67,7 +67,6 @@ const HeaderMenu = () => {
                 style={styles.menuItem}
               >
                 <Ionicons name="exit-outline" size={20} color="#c92828" />
-                rgb(255, 137, 137)
                 <Text style={styles.menuItemText}>Log Out</Text>
               </TouchableOpacity>
             </View>

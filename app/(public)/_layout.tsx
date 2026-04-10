@@ -91,6 +91,14 @@ export default function PublicTabsLayout() {
       />
 
       <Tabs.Screen
+        name="newsDetail"
+        options={{
+          title: "News",
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
         name="videos"
         options={{
           title: "Videos",

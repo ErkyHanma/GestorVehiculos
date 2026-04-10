@@ -52,7 +52,6 @@ const Index = () => {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Image Slider */}
       <View style={styles.sliderContainer}>
         <ScrollView
           ref={scrollViewRef}
