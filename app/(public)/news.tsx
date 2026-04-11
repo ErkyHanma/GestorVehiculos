@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -31,6 +32,21 @@ const News = () => {
     };
     fetchNews();
   }, []);
+
+  if (isLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#0a0e14",
+        }}
+      >
+        <ActivityIndicator size="large" color="#89acff" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>

@@ -41,3 +41,22 @@ export const getNewsById = async (id: number) => {
     throw error;
   }
 };
+
+export const getVideos = async () => {
+  const token = await AsyncStorage.getItem("token");
+
+  try {
+    const response = await fetch(`${API_URL}videos`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error("Error fetching videos:", error);
+    throw error;
+  }
+};

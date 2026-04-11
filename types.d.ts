@@ -16,3 +16,13 @@ export interface NewsItem {
   fuente: string;
   link: string;
 }
+
+export interface VideoItem {
+  id: number;
+  youtubeId: string;
+  titulo: string;
+  descripcion: string;
+  categoria: string;
+  url: string;
+  thumbnail: string;
+}
