@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "@/context/AuthContext";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
@@ -14,6 +14,7 @@ import {
 const API_BASE = "https://taller-itla.ia3x.com/api";
 
 export default function ProfileScreen() {
+  const { token } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +24,6 @@ export default function ProfileScreen() {
 
   const fetchProfile = async () => {
     try {
-      const token = await AsyncStorage.getItem("userToken");
       const res = await fetch(`${API_BASE}/perfil`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -45,7 +45,6 @@ export default function ProfileScreen() {
     });
 
     if (!result.canceled) {
-      const token = await AsyncStorage.getItem("userToken");
       const formData = new FormData();
       formData.append("foto", {
         uri: result.assets[0].uri,
@@ -75,7 +74,6 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header with Photo */}
       <View style={styles.header}>
         <View style={styles.photoContainer}>
           <Image source={{ uri: profile?.fotoUrl }} style={styles.photo} />
@@ -88,7 +86,6 @@ export default function ProfileScreen() {
         </Text>
       </View>
 
-      {/* Info Cards */}
       <View style={styles.grid}>
         <InfoCard
           label="Full Name"

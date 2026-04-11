@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "@/context/AuthContext";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
@@ -17,6 +17,7 @@ import {
 
 const API_BASE = "https://taller-itla.ia3x.com/api";
 
+// Types
 type Vehicle = {
   id: number;
   placa: string;
@@ -40,7 +41,9 @@ type VehicleDetail = Vehicle & {
   };
 };
 
+// Main Screen
 export default function VehiclesScreen() {
+  const { token } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selected, setSelected] = useState<VehicleDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +56,6 @@ export default function VehiclesScreen() {
 
   const fetchVehicles = async (marca = "", modelo = "") => {
     try {
-      const token = await AsyncStorage.getItem("userToken");
       const res = await fetch(
         `${API_BASE}/vehiculos?marca=${marca}&modelo=${modelo}&page=1&limit=20`,
         { headers: { Authorization: `Bearer ${token}` } },
@@ -69,7 +71,6 @@ export default function VehiclesScreen() {
 
   const fetchDetail = async (id: number) => {
     try {
-      const token = await AsyncStorage.getItem("userToken");
       const res = await fetch(`${API_BASE}/vehiculos/detalle?id=${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -96,6 +97,7 @@ export default function VehiclesScreen() {
     return (
       <VehicleDetailView
         vehicle={selected}
+        token={token!}
         onBack={() => setSelected(null)}
         onRefresh={() => fetchDetail(selected.id)}
       />
@@ -103,7 +105,6 @@ export default function VehiclesScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>My Garage</Text>
         <TouchableOpacity
@@ -114,7 +115,6 @@ export default function VehiclesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Search */}
       <TextInput
         style={styles.searchInput}
         placeholder="Search by brand or model..."
@@ -123,7 +123,6 @@ export default function VehiclesScreen() {
         onChangeText={handleSearch}
       />
 
-      {/* List */}
       <FlatList
         data={vehicles}
         keyExtractor={(item) => item.id.toString()}
@@ -151,9 +150,9 @@ export default function VehiclesScreen() {
         }
       />
 
-      {/* Modal Formulario */}
       <Modal visible={showForm} animationType="slide">
         <VehicleForm
+          token={token!}
           onClose={() => setShowForm(false)}
           onSuccess={() => {
             setShowForm(false);
@@ -165,12 +164,15 @@ export default function VehiclesScreen() {
   );
 }
 
+// Vehicle Detail View
 function VehicleDetailView({
   vehicle,
+  token,
   onBack,
   onRefresh,
 }: {
   vehicle: VehicleDetail;
+  token: string;
   onBack: () => void;
   onRefresh: () => void;
 }) {
@@ -185,7 +187,6 @@ function VehicleDetailView({
     });
 
     if (!result.canceled) {
-      const token = await AsyncStorage.getItem("userToken");
       const formData = new FormData();
       formData.append("datax", JSON.stringify({ id: vehicle.id }));
       formData.append("foto", {
@@ -208,12 +209,10 @@ function VehicleDetailView({
 
   return (
     <ScrollView style={styles.container}>
-      {/* Back button */}
       <TouchableOpacity style={styles.backBtn} onPress={onBack}>
         <Text style={styles.backBtnText}>← Back</Text>
       </TouchableOpacity>
 
-      {/* Vehicle photo */}
       <View style={styles.detailPhotoContainer}>
         <Image source={{ uri: vehicle.foto_url }} style={styles.detailPhoto} />
         <TouchableOpacity
@@ -224,7 +223,6 @@ function VehicleDetailView({
         </TouchableOpacity>
       </View>
 
-      {/* Vehicle info */}
       <View style={styles.detailHeader}>
         <Text style={styles.detailTitle}>
           {vehicle.marca} {vehicle.modelo}
@@ -234,7 +232,6 @@ function VehicleDetailView({
         </Text>
       </View>
 
-      {/* Edit button */}
       <TouchableOpacity
         style={styles.editVehicleBtn}
         onPress={() => setShowEdit(true)}
@@ -242,7 +239,6 @@ function VehicleDetailView({
         <Text style={styles.editVehicleBtnText}>✎ Edit Vehicle</Text>
       </TouchableOpacity>
 
-      {/* Financial summary */}
       <View style={styles.financialGrid}>
         <FinancialCard
           label="Balance"
@@ -278,10 +274,10 @@ function VehicleDetailView({
         />
       </View>
 
-      {/* Edit Modal */}
       <Modal visible={showEdit} animationType="slide">
         <VehicleEditForm
           vehicle={vehicle}
+          token={token}
           onClose={() => setShowEdit(false)}
           onSuccess={() => {
             setShowEdit(false);
@@ -293,6 +289,7 @@ function VehicleDetailView({
   );
 }
 
+// Financial Card
 function FinancialCard({
   label,
   value,
@@ -313,10 +310,13 @@ function FinancialCard({
   );
 }
 
+// Vehicle Form
 function VehicleForm({
+  token,
   onClose,
   onSuccess,
 }: {
+  token: string;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -348,7 +348,6 @@ function VehicleForm({
     }
     setSaving(true);
     try {
-      const token = await AsyncStorage.getItem("userToken");
       const formData = new FormData();
       formData.append(
         "datax",
@@ -438,12 +437,15 @@ function VehicleForm({
   );
 }
 
+// Vehicle Edit Form
 function VehicleEditForm({
   vehicle,
+  token,
   onClose,
   onSuccess,
 }: {
   vehicle: VehicleDetail;
+  token: string;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -459,7 +461,6 @@ function VehicleEditForm({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const token = await AsyncStorage.getItem("userToken");
       const res = await fetch(`${API_BASE}/vehiculos/editar`, {
         method: "POST",
         headers: {
@@ -530,6 +531,7 @@ function VehicleEditForm({
   );
 }
 
+// Styles
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0a0e14" },
   centered: {
