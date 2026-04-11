@@ -1,4 +1,4 @@
-import HeaderMenu from "@/components/auth/HeaderMenu";
+import AuthHeaderMenu from "@/components/auth/AuthHeaderMenu";
 import { Tabs } from "expo-router";
 
 export default function AuthTabsLayout() {
@@ -18,7 +18,7 @@ export default function AuthTabsLayout() {
         },
         headerTitleAlign: "center",
         headerTitle: "AutoPulse",
-        headerLeft: () => <HeaderMenu />,
+        headerLeft: () => <AuthHeaderMenu />,
       }}
     >
       <Tabs.Screen
