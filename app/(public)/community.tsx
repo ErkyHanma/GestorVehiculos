@@ -3,27 +3,30 @@ import { CommunitySubject } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import
-  {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-  } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const Community = () => {
   const [subjects, setSubjects] = useState<CommunitySubject[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [page, setPage] = useState<number>(1);
+  const [hasNextPage, setHasNextPage] = useState<boolean>(false);
+  const limit = 10;
 
   useEffect(() => {
     const fetchCommunitySubjects = async () => {
       try {
         setIsLoading(true);
-        const data = await getCommunitySubjects();
+        const data = await getCommunitySubjects({ page, limit });
         setSubjects(data);
+        setHasNextPage(Array.isArray(data) && data.length === limit);
       } catch (error) {
         console.error("Error fetching community subjects:", error);
       } finally {
@@ -31,7 +34,19 @@ const Community = () => {
       }
     };
     fetchCommunitySubjects();
-  }, []);
+  }, [page]);
+
+  const handleNextPage = () => {
+    if (hasNextPage) {
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (page > 1) {
+      setPage((prev) => prev - 1);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -152,6 +167,58 @@ const Community = () => {
               ))
             : null}
         </View>
+
+        <View style={styles.paginationContainer}>
+          <TouchableOpacity
+            onPress={handlePrevPage}
+            disabled={page === 1}
+            style={[
+              styles.paginationButton,
+              page === 1 && styles.paginationButtonDisabled,
+            ]}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={18}
+              color={page === 1 ? "#666" : "#89acff"}
+            />
+            <Text
+              style={[
+                styles.paginationButtonText,
+                page === 1 && styles.paginationButtonTextDisabled,
+              ]}
+            >
+              Previous
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.pageBadge}>
+            <Text style={styles.pageBadgeText}>Page {page}</Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={handleNextPage}
+            disabled={!hasNextPage}
+            style={[
+              styles.paginationButton,
+              !hasNextPage && styles.paginationButtonDisabled,
+            ]}
+          >
+            <Text
+              style={[
+                styles.paginationButtonText,
+                !hasNextPage && styles.paginationButtonTextDisabled,
+              ]}
+            >
+              Next
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={!hasNextPage ? "#666" : "#89acff"}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -167,7 +234,7 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: 42,
     paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 80,
   },
   title: {
     fontSize: 32,
@@ -195,5 +262,48 @@ const styles = StyleSheet.create({
     height: 200,
     marginTop: 16,
     borderRadius: 8,
+  },
+  paginationContainer: {
+    marginTop: 32,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+  },
+  paginationButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderColor: "#89acff",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#1a1f28",
+  },
+  paginationButtonDisabled: {
+    borderColor: "#444",
+    backgroundColor: "#222831",
+  },
+  paginationButtonText: {
+    color: "#89acff",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  paginationButtonTextDisabled: {
+    color: "#666",
+  },
+  pageBadge: {
+    borderWidth: 1,
+    borderColor: "#89acff",
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: "#1a1f28",
+  },
+  pageBadgeText: {
+    color: "#89acff",
+    fontWeight: "700",
+    fontSize: 13,
   },
 });
