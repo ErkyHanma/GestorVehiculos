@@ -60,3 +60,55 @@ export const getVideos = async () => {
     throw error;
   }
 };
+
+export const getCommunitySubjects = async ({
+  page = 1,
+  limit = 10,
+}: { page?: number; limit?: number } = {}) => {
+  const token = await AsyncStorage.getItem("token");
+
+  const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
+
+  const queryString = params.toString();
+
+  try {
+    const response = await fetch(`${API_URL}foro/temas?${queryString}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error("Error fetching community subjects:", error);
+    throw error;
+  }
+};
+
+export const getCommunitySubjectById = async (id: number) => {
+  const token = await AsyncStorage.getItem("token");
+
+  const params = new URLSearchParams();
+  if (id) params.append("id", id.toString());
+
+  const queryString = params.toString();
+
+  try {
+    const response = await fetch(`${API_URL}foro/detalle?${queryString}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error("Error fetching community subjects:", error);
+    throw error;
+  }
+};

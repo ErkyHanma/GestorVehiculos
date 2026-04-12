@@ -26,3 +26,33 @@ export interface VideoItem {
   url: string;
   thumbnail: string;
 }
+
+export interface CommunitySubject {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  fecha: string;
+  vehiculo: string;
+  vehiculoFoto: string;
+  autor: string;
+  totalRespuestas: number;
+}
+
+export interface CommunitySubjectDetail {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  fecha: string;
+  vehiculo: string;
+  vehiculoFoto: string;
+  autor: string;
+  respuestas: CommunityResponse[];
+  totalRespuestas: number;
+}
+
+export interface CommunityResponse {
+  id: number;
+  contenido: string;
+  fecha: string;
+  autor: string;
+}

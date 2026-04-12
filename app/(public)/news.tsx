@@ -65,7 +65,7 @@ const News = () => {
                   style={styles.newsCard}
                   onPress={() =>
                     router.push({
-                      pathname: "/newsDetail",
+                      pathname: "/newsDetails",
                       params: { id: item.id },
                     })
                   }
