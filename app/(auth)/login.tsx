@@ -1,7 +1,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -18,11 +18,12 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  if (isAuthenticated) {
-    // router.replace("/(public)");
-    router.replace("/(protected)/profile");
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/(public)");
+      // router.replace("/(protected)/profile");
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = async () => {
     if (!studentId || !accessKey) {
@@ -33,8 +34,8 @@ const Login = () => {
     try {
       setError("");
       await login(studentId, accessKey);
-      // router.replace("/(public)");
-      router.replace("/(protected)/profile");
+      router.replace("/(public)");
+      // router.replace("/(protected)/profile");
     } catch (err) {
       setError("Authentication failed. Please check your credentials.");
     }

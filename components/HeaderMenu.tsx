@@ -2,14 +2,15 @@ import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import
+  {
+    Modal,
+    Pressable,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+  } from "react-native";
 
 const HeaderMenu = () => {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -48,6 +49,20 @@ const HeaderMenu = () => {
         >
           <View style={styles.menuContainer}>
             <View style={[styles.menuContent, styles.androidMenuBg]}>
+              <TouchableOpacity
+                onPress={() => handleNavigation("/(protected)/profile")}
+                style={styles.menuItem}
+              >
+                <Ionicons
+                  name="person-circle-outline"
+                  size={20}
+                  color="#89acff"
+                />
+                <Text style={styles.menuItemText}>Profile</Text>
+              </TouchableOpacity>
+
+              <View style={styles.menuDivider} />
+
               <TouchableOpacity
                 onPress={() => handleNavigation("/(public)/about")}
                 style={styles.menuItem}
