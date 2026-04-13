@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useState } from "react";
 import {
@@ -17,7 +18,6 @@ import {
 
 const API_BASE = "https://taller-itla.ia3x.com/api";
 
-// Types
 type Vehicle = {
   id: number;
   placa: string;
@@ -41,7 +41,6 @@ type VehicleDetail = Vehicle & {
   };
 };
 
-// Main Screen
 export default function VehiclesScreen() {
   const { token } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -83,7 +82,7 @@ export default function VehiclesScreen() {
 
   const handleSearch = (text: string) => {
     setSearch(text);
-    fetchVehicles(text, text);
+    fetchVehicles(text, "");
   };
 
   if (loading)
@@ -98,15 +97,22 @@ export default function VehiclesScreen() {
       <VehicleDetailView
         vehicle={selected}
         token={token!}
-        onBack={() => setSelected(null)}
+        onBack={() => {
+          setSelected(null);
+          fetchVehicles();
+        }}
         onRefresh={() => fetchDetail(selected.id)}
       />
     );
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>My Garage</Text>
+        <View>
+          <Text style={styles.title}>My Garage</Text>
+          <Text style={styles.subtitle}>Manage your fleet</Text>
+        </View>
         <TouchableOpacity
           style={styles.addBtn}
           onPress={() => setShowForm(true)}
@@ -115,18 +121,31 @@ export default function VehiclesScreen() {
         </TouchableOpacity>
       </View>
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search by brand or model..."
-        placeholderTextColor="#72757d"
-        value={search}
-        onChangeText={handleSearch}
-      />
+      {/* Search */}
+      <View style={styles.searchContainer}>
+        <Ionicons
+          name="search-outline"
+          size={18}
+          color="#72757d"
+          style={{ marginRight: 8 }}
+        />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by brand or model..."
+          placeholderTextColor="#72757d"
+          value={search}
+          onChangeText={handleSearch}
+        />
+      </View>
 
+      {/* Section label */}
+      <Text style={styles.sectionLabel}>Active Vehicles</Text>
+
+      {/* List */}
       <FlatList
         data={vehicles}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.vehicleCard}
@@ -137,11 +156,18 @@ export default function VehiclesScreen() {
               style={styles.vehicleThumb}
             />
             <View style={styles.vehicleInfo}>
-              <Text style={styles.vehicleName}>
-                {item.marca} {item.modelo}
+              <View style={styles.vehicleNameRow}>
+                <Text style={styles.vehicleName}>{item.modelo}</Text>
+                <View style={styles.activeBadge}>
+                  <Text style={styles.activeBadgeText}>Active</Text>
+                </View>
+              </View>
+              <Text style={styles.vehicleBrand}>
+                {item.marca} · {item.anio}
               </Text>
-              <Text style={styles.vehicleYear}>{item.anio}</Text>
-              <Text style={styles.vehiclePlate}>{item.placa}</Text>
+              <View style={styles.plateTag}>
+                <Text style={styles.vehiclePlate}>{item.placa}</Text>
+              </View>
             </View>
           </TouchableOpacity>
         )}
@@ -164,7 +190,7 @@ export default function VehiclesScreen() {
   );
 }
 
-// Vehicle Detail View
+// ─── Vehicle Detail View ──────────────────────────────────
 function VehicleDetailView({
   vehicle,
   token,
@@ -177,6 +203,8 @@ function VehicleDetailView({
   onRefresh: () => void;
 }) {
   const [showEdit, setShowEdit] = useState(false);
+  const r = vehicle.resumen;
+  const fotoUri = (vehicle as any).fotoUrl ?? vehicle.foto_url;
 
   const handleChangePhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -185,7 +213,6 @@ function VehicleDetailView({
       aspect: [16, 9],
       quality: 0.8,
     });
-
     if (!result.canceled) {
       const formData = new FormData();
       formData.append("datax", JSON.stringify({ id: vehicle.id }));
@@ -194,84 +221,128 @@ function VehicleDetailView({
         name: "vehicle.jpg",
         type: "image/jpeg",
       } as any);
-
       await fetch(`${API_BASE}/vehiculos/foto`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-
       onRefresh();
     }
   };
 
-  const r = vehicle.resumen;
-
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
       <TouchableOpacity style={styles.backBtn} onPress={onBack}>
         <Text style={styles.backBtnText}>← Back</Text>
       </TouchableOpacity>
 
+      {/* Photo */}
       <View style={styles.detailPhotoContainer}>
-        <Image source={{ uri: vehicle.foto_url }} style={styles.detailPhoto} />
+        <Image source={{ uri: fotoUri }} style={styles.detailPhoto} />
         <TouchableOpacity
           style={styles.changePhotoBtn}
           onPress={handleChangePhoto}
         >
-          <Text style={styles.changePhotoBtnText}>Change Photo</Text>
+          <Ionicons name="camera-outline" size={14} color="#f1f3fc" />
+          <Text style={styles.changePhotoBtnText}> Change Photo</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.detailHeader}>
-        <Text style={styles.detailTitle}>
-          {vehicle.marca} {vehicle.modelo}
-        </Text>
-        <Text style={styles.detailSubtitle}>
-          {vehicle.anio} · {vehicle.placa}
-        </Text>
+      {/* Title row */}
+      <View style={styles.detailTitleRow}>
+        <View>
+          <Text style={styles.detailInsightsLabel}>Vehicle Insights</Text>
+          <Text style={styles.detailTitle}>
+            {vehicle.marca} {vehicle.modelo}
+          </Text>
+          <Text style={styles.detailSubtitle}>
+            {vehicle.anio} · {vehicle.placa}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.editIconBtn}
+          onPress={() => setShowEdit(true)}
+        >
+          <Ionicons name="create-outline" size={18} color="#89acff" />
+        </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={styles.editVehicleBtn}
-        onPress={() => setShowEdit(true)}
-      >
-        <Text style={styles.editVehicleBtnText}>✎ Edit Vehicle</Text>
-      </TouchableOpacity>
+      {/* Balance */}
+      <View style={styles.balanceCard}>
+        <View>
+          <Text style={styles.balanceLabel}>Overall Balance</Text>
+          <Text style={styles.balanceValue}>
+            RD${" "}
+            {Math.abs(r.balance).toLocaleString("es-DO", {
+              minimumFractionDigits: 2,
+            })}
+          </Text>
+          <Text
+            style={[
+              styles.balanceTrend,
+              { color: r.balance >= 0 ? "#89acff" : "#ff7076" },
+            ]}
+          >
+            {r.balance >= 0 ? "▲ Positive balance" : "▼ Negative balance"}
+          </Text>
+        </View>
+      </View>
 
+      {/* Financial cards */}
       <View style={styles.financialGrid}>
         <FinancialCard
-          label="Balance"
-          value={r.balance}
-          color="#89acff"
-          positive={r.balance >= 0}
-        />
-        <FinancialCard
+          icon="build-outline"
           label="Maintenance"
-          value={-r.totalMantenimientos}
-          color="#ff7076"
+          value={r.totalMantenimientos}
+          negative
         />
         <FinancialCard
+          icon="car-outline"
           label="Fuel"
-          value={-r.totalCombustible}
-          color="#ff7076"
+          value={r.totalCombustible}
+          negative
         />
         <FinancialCard
-          label="Expenses"
-          value={-r.totalGastos}
-          color="#ff7076"
-        />
-        <FinancialCard
+          icon="cash-outline"
           label="Income"
           value={r.totalIngresos}
-          color="#ffb7fc"
           positive
         />
         <FinancialCard
-          label="Total Invested"
-          value={-r.totalInvertido}
-          color="#72757d"
+          icon="document-text-outline"
+          label="Other Expenses"
+          value={r.totalGastos}
+          negative
         />
+      </View>
+
+      {/* Vehicle specs */}
+      <View style={styles.specsCard}>
+        <Text style={styles.specsTitle}>Vehicle Details</Text>
+        <View style={styles.specsRow}>
+          <SpecItem label="Chassis" value={vehicle.chasis} />
+          <SpecItem
+            label="Wheels"
+            value={`${(vehicle as any).cantidadRuedas ?? vehicle.cantidad_ruedas}`}
+          />
+        </View>
+        <View style={styles.specsRow}>
+          <SpecItem
+            label="Total Invested"
+            value={`RD$ ${r.totalInvertido.toLocaleString("es-DO")}`}
+          />
+          <SpecItem
+            label="Registered"
+            value={
+              ((vehicle as any).fechaRegistro ?? vehicle.fecha_registro)?.split(
+                "T",
+              )[0] ?? "—"
+            }
+          />
+        </View>
       </View>
 
       <Modal visible={showEdit} animationType="slide">
@@ -289,28 +360,52 @@ function VehicleDetailView({
   );
 }
 
-// Financial Card
+// ─── Financial Card ───────────────────────────────────────
 function FinancialCard({
+  icon,
   label,
   value,
-  color,
+  negative = false,
   positive = false,
 }: {
+  icon: string;
   label: string;
   value: number;
-  color: string;
+  negative?: boolean;
   positive?: boolean;
 }) {
-  const formatted = `${positive ? "+" : ""}RD$ ${Math.abs(value).toLocaleString("es-DO", { minimumFractionDigits: 2 })}`;
+  const color = positive ? "#ffb7fc" : negative ? "#ff7076" : "#89acff";
+  const sign = positive ? "+" : negative ? "-" : "";
   return (
-    <View style={[styles.financialCard, { borderLeftColor: color }]}>
+    <View style={styles.financialCard}>
+      <View
+        style={[styles.financialIconBox, { backgroundColor: `${color}18` }]}
+      >
+        <Ionicons name={icon as any} size={20} color={color} />
+      </View>
       <Text style={styles.financialLabel}>{label}</Text>
-      <Text style={[styles.financialValue, { color }]}>{formatted}</Text>
+      <Text style={[styles.financialValue, { color }]}>
+        {sign}RD${" "}
+        {Math.abs(value).toLocaleString("es-DO", { minimumFractionDigits: 2 })}
+      </Text>
     </View>
   );
 }
 
-// Vehicle Form
+// ─── Spec Item ────────────────────────────────────────────
+function SpecItem({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.specItem}>
+      <Text style={styles.specLabel}>{label}</Text>
+      <Text style={styles.specValue}>{value}</Text>
+    </View>
+  );
+}
+
+// ─── Vehicle Form ─────────────────────────────────────────
+
+const WHEEL_OPTIONS = ["2", "3", "4", "6", "8", "10", "12", "18"];
+
 function VehicleForm({
   token,
   onClose,
@@ -346,6 +441,32 @@ function VehicleForm({
       Alert.alert("Error", "Plate, brand and model are required.");
       return;
     }
+
+    const year = Number(form.anio);
+    const currentYear = new Date().getFullYear();
+
+    if (!/^\d{4}$/.test(form.anio)) {
+      Alert.alert("Error", "Year must be a 4-digit number.");
+      return;
+    }
+
+    if (!year || isNaN(year)) {
+      Alert.alert("Error", "Invalid year.");
+      return;
+    }
+
+    if (year < 1886 || year > currentYear) {
+      Alert.alert("Error", `Year must be between 1886 and ${currentYear}.`);
+      return;
+    }
+
+    const wheels = Number(form.cantidadRuedas);
+
+    if (wheels < 2 || wheels > 18) {
+      Alert.alert("Error", "Number of wheels must be between 2 and 18.");
+      return;
+    }
+
     setSaving(true);
     try {
       const formData = new FormData();
@@ -353,10 +474,11 @@ function VehicleForm({
         "datax",
         JSON.stringify({
           ...form,
-          anio: Number(form.anio),
-          cantidadRuedas: Number(form.cantidadRuedas),
+          anio: year,
+          cantidadRuedas: wheels,
         }),
       );
+
       if (photo) {
         formData.append("foto", {
           uri: photo.uri,
@@ -370,6 +492,7 @@ function VehicleForm({
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+
       const data = await res.json();
 
       if (data.success) {
@@ -393,17 +516,13 @@ function VehicleForm({
         </TouchableOpacity>
       </View>
 
+      {/* Inputs */}
       {[
         { key: "placa", placeholder: "Plate (e.g. A123456)" },
         { key: "chasis", placeholder: "Chassis number" },
         { key: "marca", placeholder: "Brand (e.g. Toyota)" },
         { key: "modelo", placeholder: "Model (e.g. Corolla)" },
         { key: "anio", placeholder: "Year (e.g. 2022)", keyboard: "numeric" },
-        {
-          key: "cantidadRuedas",
-          placeholder: "Number of wheels",
-          keyboard: "numeric",
-        },
       ].map(({ key, placeholder, keyboard }) => (
         <TextInput
           key={key}
@@ -416,14 +535,53 @@ function VehicleForm({
         />
       ))}
 
+      {/* Selector */}
+      <Text style={{ color: "#72757d", marginLeft: 16, marginTop: 16 }}>
+        Number of wheels
+      </Text>
+
+      <View
+        style={{ flexDirection: "row", flexWrap: "wrap", margin: 16, gap: 8 }}
+      >
+        {WHEEL_OPTIONS.map((opt) => (
+          <TouchableOpacity
+            key={opt}
+            style={{
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: form.cantidadRuedas === opt ? "#89acff" : "#20262f",
+              backgroundColor:
+                form.cantidadRuedas === opt ? "#89acff22" : "#151a21",
+            }}
+            onPress={() => setForm({ ...form, cantidadRuedas: opt })}
+          >
+            <Text
+              style={{
+                color: form.cantidadRuedas === opt ? "#89acff" : "#f1f3fc",
+                fontWeight: "600",
+              }}
+            >
+              {opt}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Photo */}
       <TouchableOpacity style={styles.photoPickerBtn} onPress={pickPhoto}>
         {photo ? (
           <Image source={{ uri: photo.uri }} style={styles.photoPreview} />
         ) : (
-          <Text style={styles.photoPickerText}>📷 Add Vehicle Photo</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Ionicons name="camera-outline" size={18} color="#72757d" />
+            <Text style={styles.photoPickerText}>Add Vehicle Photo</Text>
+          </View>
         )}
       </TouchableOpacity>
 
+      {/* Button */}
       <TouchableOpacity
         style={[styles.saveBtn, saving && { opacity: 0.6 }]}
         onPress={handleSave}
@@ -437,7 +595,7 @@ function VehicleForm({
   );
 }
 
-// Vehicle Edit Form
+// ─── Vehicle Edit Form ────────────────────────────────────
 function VehicleEditForm({
   vehicle,
   token,
@@ -459,6 +617,24 @@ function VehicleEditForm({
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    const year = Number(form.anio);
+    const currentYear = new Date().getFullYear();
+
+    if (!/^\d{4}$/.test(form.anio)) {
+      Alert.alert("Error", "Year must be a 4-digit number.");
+      return;
+    }
+
+    if (!year || isNaN(year)) {
+      Alert.alert("Error", "Invalid year.");
+      return;
+    }
+
+    if (year < 1886 || year > currentYear) {
+      Alert.alert("Error", `Year must be between 1886 and ${currentYear}.`);
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch(`${API_BASE}/vehiculos/editar`, {
@@ -474,11 +650,13 @@ function VehicleEditForm({
             chasis: form.chasis,
             marca: form.marca,
             modelo: form.modelo,
-            anio: Number(form.anio),
+            anio: year,
           }),
         )}`,
       });
+
       const data = await res.json();
+
       if (data.success) {
         onSuccess();
       } else {
@@ -499,7 +677,6 @@ function VehicleEditForm({
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
       </View>
-
       {[
         { key: "placa", placeholder: "Plate" },
         { key: "chasis", placeholder: "Chassis number" },
@@ -517,7 +694,6 @@ function VehicleEditForm({
           onChangeText={(text) => setForm({ ...form, [key]: text })}
         />
       ))}
-
       <TouchableOpacity
         style={[styles.saveBtn, saving && { opacity: 0.6 }]}
         onPress={handleSave}
@@ -531,7 +707,7 @@ function VehicleEditForm({
   );
 }
 
-// Styles
+// ─── Styles ───────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0a0e14" },
   centered: {
@@ -540,14 +716,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#0a0e14",
   },
+
+  // List screen
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-end",
     padding: 16,
     paddingTop: 60,
   },
   title: { color: "#f1f3fc", fontSize: 28, fontWeight: "bold" },
+  subtitle: { color: "#72757d", fontSize: 13, marginTop: 2 },
   addBtn: {
     backgroundColor: "#89acff",
     paddingHorizontal: 16,
@@ -555,14 +734,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   addBtnText: { color: "#002b6a", fontWeight: "bold", fontSize: 13 },
-  searchInput: {
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     margin: 16,
     backgroundColor: "#151a21",
     borderRadius: 12,
-    padding: 14,
-    color: "#f1f3fc",
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: "#20262f",
+  },
+  searchIcon: { fontSize: 16, marginRight: 8 },
+  searchInput: { flex: 1, padding: 12, color: "#f1f3fc" },
+  sectionLabel: {
+    color: "#89acff",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    paddingHorizontal: 16,
+    marginBottom: 10,
   },
   vehicleCard: {
     backgroundColor: "#151a21",
@@ -580,16 +771,46 @@ const styles = StyleSheet.create({
     backgroundColor: "#20262f",
   },
   vehicleInfo: { flex: 1, justifyContent: "center" },
+  vehicleNameRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 2,
+  },
   vehicleName: { color: "#f1f3fc", fontSize: 16, fontWeight: "bold" },
-  vehicleYear: { color: "#72757d", fontSize: 13, marginTop: 2 },
+  activeBadge: {
+    backgroundColor: "rgba(255,112,118,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,112,118,0.3)",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 20,
+  },
+  activeBadgeText: {
+    color: "#ff7076",
+    fontSize: 9,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  vehicleBrand: { color: "#72757d", fontSize: 13, marginBottom: 6 },
+  plateTag: {
+    backgroundColor: "#0a0e14",
+    borderWidth: 1,
+    borderColor: "#20262f",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+  },
   vehiclePlate: {
-    color: "#89acff",
-    fontSize: 12,
+    color: "#f1f3fc",
+    fontSize: 11,
     fontFamily: "monospace",
-    marginTop: 6,
     letterSpacing: 2,
   },
   emptyText: { color: "#72757d", textAlign: "center", marginTop: 40 },
+
+  // Detail screen
   backBtn: { padding: 16, paddingTop: 60 },
   backBtnText: { color: "#89acff", fontSize: 16 },
   detailPhotoContainer: { position: "relative", margin: 16 },
@@ -607,40 +828,131 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   changePhotoBtnText: { color: "#f1f3fc", fontSize: 12 },
-  detailHeader: { paddingHorizontal: 16, marginBottom: 12 },
-  detailTitle: { color: "#f1f3fc", fontSize: 24, fontWeight: "bold" },
-  detailSubtitle: { color: "#72757d", fontSize: 14, marginTop: 4 },
-  editVehicleBtn: {
-    marginHorizontal: 16,
-    marginBottom: 20,
+  detailTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  detailInsightsLabel: {
+    color: "#89acff",
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  detailTitle: { color: "#f1f3fc", fontSize: 22, fontWeight: "bold" },
+  detailSubtitle: { color: "#72757d", fontSize: 13, marginTop: 2 },
+  editIconBtn: {
     backgroundColor: "#20262f",
-    borderRadius: 12,
-    padding: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#44484f",
   },
-  editVehicleBtnText: { color: "#89acff", fontWeight: "600", fontSize: 14 },
-  financialGrid: { padding: 16, gap: 12 },
-  financialCard: {
+  editIconBtnText: { color: "#89acff", fontSize: 16 },
+
+  // Balance card
+  balanceCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
     backgroundColor: "#151a21",
-    borderRadius: 12,
-    padding: 20,
-    borderLeftWidth: 3,
+    borderRadius: 16,
+    padding: 24,
+    borderLeftWidth: 4,
+    borderLeftColor: "#89acff",
     borderWidth: 1,
     borderColor: "#20262f",
   },
-  financialLabel: {
+  balanceLabel: {
     color: "#72757d",
     fontSize: 11,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 1,
+    marginBottom: 8,
+  },
+  balanceValue: {
+    color: "#f1f3fc",
+    fontSize: 32,
+    fontWeight: "bold",
     marginBottom: 6,
   },
-  financialValue: { fontSize: 22, fontWeight: "bold" },
+  balanceTrend: { fontSize: 12, fontWeight: "600" },
+
+  // Financial grid
+  financialGrid: {
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 16,
+  },
+  financialCard: {
+    backgroundColor: "#151a21",
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#20262f",
+    width: "47%",
+  },
+  financialIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  financialIcon: { fontSize: 18 },
+  financialLabel: {
+    color: "#72757d",
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  financialValue: { fontSize: 16, fontWeight: "bold" },
+
+  // Specs card
+  specsCard: {
+    marginHorizontal: 16,
+    backgroundColor: "#151a21",
+    borderRadius: 14,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#20262f",
+  },
+  specsTitle: {
+    color: "#f1f3fc",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 16,
+  },
+  specsRow: { flexDirection: "row", gap: 12, marginBottom: 12 },
+  specItem: { flex: 1 },
+  specLabel: {
+    color: "#72757d",
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  specValue: { color: "#f1f3fc", fontSize: 13, fontWeight: "500" },
+
+  // Forms
   formHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
