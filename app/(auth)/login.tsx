@@ -19,7 +19,8 @@ const Login = () => {
   const [error, setError] = useState("");
 
   if (isAuthenticated) {
-    router.replace("/(public)");
+    // router.replace("/(public)");
+    router.replace("/(protected)/profile");
     return null;
   }
 
@@ -32,7 +33,8 @@ const Login = () => {
     try {
       setError("");
       await login(studentId, accessKey);
-      router.replace("/(public)");
+      // router.replace("/(public)");
+      router.replace("/(protected)/profile");
     } catch (err) {
       setError("Authentication failed. Please check your credentials.");
     }
@@ -179,7 +181,6 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     letterSpacing: 2,
   },
-
   content: {
     flex: 1,
   },
