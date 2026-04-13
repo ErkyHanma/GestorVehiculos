@@ -56,3 +56,28 @@ export interface CommunityResponse {
   fecha: string;
   autor: string;
 }
+
+export interface Vehicle {
+  id: number;
+  marca: string;
+  modelo: string;
+  anio: number;
+  precio: number;
+  descripcionCorta: string;
+  imagenUrl: string;
+}
+
+
+export interface VehicleDetailsType {
+id: number;
+marca: string;
+modelo: string;
+anio: number;
+precio: number;
+imagenes: string[];
+descripcion: string;
+especificaciones: Record<string, any>;
+}
+
+
+

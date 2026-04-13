@@ -67,6 +67,14 @@ export default function PublicTabsLayout() {
       />
 
       <Tabs.Screen
+        name="vehicleDetails"
+        options={{
+          title: "Vehicle Details",
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
         name="about"
         options={{
           href: null,

@@ -1,4 +1,5 @@
 import { getCommunitySubjectById } from "@/services/api";
+import { CommunitySubjectDetail } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -12,25 +13,6 @@ import
     TouchableOpacity,
     View,
   } from "react-native";
-
-export interface CommunitySubjectDetail {
-  id: number;
-  titulo: string;
-  descripcion: string;
-  fecha: string;
-  vehiculo: string;
-  vehiculoFoto: string;
-  autor: string;
-  totalRespuestas: number;
-  respuestas: CommunityResponse[];
-}
-
-export interface CommunityResponse {
-  id: number;
-  contenido: string;
-  fecha: string;
-  autor: string;
-}
 
 const CommunityDetails = () => {
   const router = useRouter();
