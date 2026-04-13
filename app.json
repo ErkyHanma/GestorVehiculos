@@ -8,6 +8,9 @@
     "scheme": "gestorvehiculos",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "extra": {
+      "apiUrl": "https://taller-itla.ia3x.com/api/"
+    },
     "ios": {
       "supportsTablet": true
     },
