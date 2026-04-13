@@ -523,6 +523,7 @@ function MaintenanceDetail({
 }
 
 // ─── Maintenance Form ─────────────────────────────────────
+
 function MaintenanceForm({
   token,
   vehiculoId,
@@ -554,6 +555,37 @@ function MaintenanceForm({
   const [photos, setPhotos] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
 
+  // ✅ Validación de fecha (igual que en pinchazos, pero corregida)
+  const isValidDate = (dateStr: string) => {
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateStr)) return false;
+
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+
+    if (isNaN(date.getTime())) return false;
+
+    // Validar coherencia real (ej: 2026-02-30)
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() + 1 !== month ||
+      date.getDate() !== day
+    ) {
+      return false;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Permite HOY, bloquea futuro
+    if (date > today) return false;
+
+    // Límite inferior razonable
+    if (year < 2000) return false;
+
+    return true;
+  };
+
   const pickPhotos = async () => {
     if (photos.length >= 5) {
       Alert.alert("Limit", "Maximum 5 photos allowed.");
@@ -575,6 +607,16 @@ function MaintenanceForm({
       Alert.alert("Error", "Type and cost are required.");
       return;
     }
+
+    // ✅ Validación aplicada aquí
+    if (!isValidDate(form.fecha)) {
+      Alert.alert(
+        "Error",
+        "Invalid date. Use YYYY-MM-DD and a valid past or current date.",
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       const formData = new FormData();
@@ -590,6 +632,7 @@ function MaintenanceForm({
           fecha: form.fecha,
         }),
       );
+
       photos.forEach((photo, i) => {
         formData.append("fotos[]", {
           uri: photo.uri,
@@ -604,6 +647,7 @@ function MaintenanceForm({
         body: formData,
       });
       const data = await res.json();
+
       if (data.success) {
         onSuccess();
       } else {
