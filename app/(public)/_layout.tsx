@@ -67,6 +67,14 @@ export default function PublicTabsLayout() {
       />
 
       <Tabs.Screen
+        name="vehicleDetails"
+        options={{
+          title: "Vehicle Details",
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
         name="about"
         options={{
           href: null,
@@ -91,7 +99,7 @@ export default function PublicTabsLayout() {
       />
 
       <Tabs.Screen
-        name="newsDetail"
+        name="newsDetails"
         options={{
           title: "News",
           href: null,
@@ -127,6 +135,14 @@ export default function PublicTabsLayout() {
               />
             );
           },
+        }}
+      />
+
+      <Tabs.Screen
+        name="communityDetails"
+        options={{
+          title: "Community ",
+          href: null,
         }}
       />
     </Tabs>

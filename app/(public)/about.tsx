@@ -1,131 +1,107 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import
+import {
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+type TeamMember = {
+  id: string;
+  fullName: string;
+  matricula: string;
+  phone: string;
+  telegramUrl: string;
+  email: string;
+  photoUrl: string;
+};
+
+const teamMembers: TeamMember[] = [
   {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-  } from "react-native";
+    id: "1",
+    fullName: "Nombre Apellido 1",
+    matricula: "2023-0001",
+    phone: "+18095550101",
+    telegramUrl: "https://t.me/username1",
+    email: "miembro1@itla.edu.do",
+    photoUrl: "https://i.pravatar.cc/400?img=12",
+  },
+  {
+    id: "2",
+    fullName: "Nombre Apellido 2",
+    matricula: "2023-0002",
+    phone: "+18095550102",
+    telegramUrl: "https://t.me/username2",
+    email: "miembro2@itla.edu.do",
+    photoUrl: "https://i.pravatar.cc/400?img=32",
+  },
+];
 
 const About = () => {
+  const handleCall = async (phone: string) => {
+    await Linking.openURL(`tel:${phone}`);
+  };
+
+  const handleOpenTelegram = async (telegramUrl: string) => {
+    await Linking.openURL(telegramUrl);
+  };
+
+  const handleSendEmail = async (email: string) => {
+    await Linking.openURL(`mailto:${email}`);
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Hero Section */}
-      <View style={styles.heroSection}>
-        <View style={styles.logoIcon}>
-          <Ionicons name="flash" size={48} color="#0a0e14" />
-        </View>
-        <Text style={styles.title}>AutoPulse</Text>
-        <Text style={styles.version}>V4.2.0 PERFORMANCE INTERFACE</Text>
-      </View>
+      <Text style={styles.title}>Our Team</Text>
 
-      {/* Description */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>The Kinetic Cockpit</Text>
-        <Text style={styles.description}>
-          AutoPulse is a high-performance vehicle management system that
-          transforms your automotive experience into a precision-engineered
-          interface. Think of it as your vehicle command center, delivering
-          real-time telemetry, diagnostics, and control at your fingertips.
-        </Text>
-      </View>
+      {teamMembers.map((member) => (
+        <View key={member.id} style={styles.card}>
+          <Image source={{ uri: member.photoUrl }} style={styles.photo} />
 
-      {/* Features */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Core Features</Text>
-        <View style={styles.featureGrid}>
-          <FeatureCard
-            icon="speedometer-outline"
-            title="Real-Time Telemetry"
-            description="Monitor your vehicle's performance metrics in real-time"
-          />
-          <FeatureCard
-            icon="shield-checkmark-outline"
-            title="AES-256 Encryption"
-            description="Military-grade security for all vehicle communications"
-          />
-          <FeatureCard
-            icon="analytics-outline"
-            title="Advanced Analytics"
-            description="Deep insights into your driving patterns and efficiency"
-          />
-          <FeatureCard
-            icon="notifications-outline"
-            title="Smart Alerts"
-            description="Proactive notifications for maintenance and diagnostics"
-          />
-        </View>
-      </View>
-
-      {/* Technology */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Technology Stack</Text>
-        <View style={styles.techStack}>
-          <TechItem
-            label="React Native"
-            value="High-performance cross-platform"
-          />
-          <TechItem label="Expo Router" value="File-based navigation system" />
-          <TechItem label="TypeScript" value="Type-safe development" />
-          <TechItem
-            label="Secure Telemetry"
-            value="AES-256 encrypted data transmission"
-          />
-        </View>
-      </View>
-
-      {/* CTA */}
-      <View style={styles.ctaSection}>
-        <TouchableOpacity style={styles.buttonWrapper}>
-          <Ionicons name="mail-outline" size={20} color="#0a0e14" />
-          <Text style={styles.buttonText}>Contact Support</Text>
-        </TouchableOpacity>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © 2026 AutoPulse Systems. All rights reserved.
-          </Text>
-          <View style={styles.footerLinks}>
-            <TouchableOpacity>
-              <Text style={styles.footerLink}>Privacy Protocol</Text>
-            </TouchableOpacity>
-            <Text style={styles.footerDivider}>•</Text>
-            <TouchableOpacity>
-              <Text style={styles.footerLink}>Terms of Service</Text>
-            </TouchableOpacity>
+          <View style={styles.row}>
+            <Ionicons name="person" size={18} color="#89acff" />
+            <Text style={styles.label}>Nombre y Apellido:</Text>
+            <Text style={styles.value}>{member.fullName}</Text>
           </View>
+
+          <View style={styles.row}>
+            <Ionicons name="school" size={18} color="#89acff" />
+            <Text style={styles.label}>Matricula ITLA:</Text>
+            <Text style={styles.value}>{member.matricula}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.actionRow}
+            onPress={() => handleCall(member.phone)}
+          >
+            <Ionicons name="call" size={18} color="#89acff" />
+            <Text style={styles.actionText}>Telefono: {member.phone}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionRow}
+            onPress={() => handleOpenTelegram(member.telegramUrl)}
+          >
+            <Ionicons name="paper-plane" size={18} color="#89acff" />
+            <Text style={styles.actionText}>Telegram</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionRow}
+            onPress={() => handleSendEmail(member.email)}
+          >
+            <Ionicons name="mail" size={18} color="#89acff" />
+            <Text style={styles.actionText}>{member.email}</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      ))}
     </ScrollView>
   );
 };
-
-const FeatureCard = ({
-  icon,
-  title,
-  description,
-}: {
-  icon: any;
-  title: string;
-  description: string;
-}) => (
-  <View style={styles.featureCard}>
-    <View style={styles.featureIconContainer}>
-      <Ionicons name={icon} size={24} color="#89acff" />
-    </View>
-    <Text style={styles.featureTitle}>{title}</Text>
-    <Text style={styles.featureDescription}>{description}</Text>
-  </View>
-);
-
-const TechItem = ({ label, value }: { label: string; value: string }) => (
-  <View style={styles.techItem}>
-    <Text style={styles.techLabel}>{label}</Text>
-    <Text style={styles.techValue}>{value}</Text>
-  </View>
-);
 
 export default About;
 
@@ -135,141 +111,60 @@ const styles = StyleSheet.create({
     backgroundColor: "#0a0e14",
   },
   content: {
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 60,
-  },
-  heroSection: {
-    alignItems: "center",
-    marginBottom: 48,
-  },
-  logoIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: "#89acff",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 42,
+    paddingBottom: 40,
+    gap: 18,
   },
   title: {
-    fontSize: 36,
-    fontWeight: "700",
-    color: "#ffffff",
-    letterSpacing: 2,
-    marginBottom: 8,
+    fontSize: 30,
+    color: "#fff",
+    fontWeight: "bold",
+    marginBottom: 6,
   },
-  version: {
-    fontSize: 12,
-    color: "#6b7280",
-    letterSpacing: 1,
-  },
-  section: {
-    marginBottom: 40,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#ffffff",
-    marginBottom: 16,
-    letterSpacing: -0.5,
-  },
-  description: {
-    fontSize: 15,
-    color: "#9ca3af",
-    lineHeight: 24,
-  },
-  featureGrid: {
-    gap: 16,
-  },
-  featureCard: {
-    backgroundColor: "#0f141a",
-    borderRadius: 16,
-    padding: 20,
+  card: {
+    backgroundColor: "#2c323d",
+    borderRadius: 10,
+    padding: 14,
+    gap: 12,
     borderWidth: 1,
-    borderColor: "rgba(137, 172, 255, 0.15)",
+    borderColor: "#89acff",
   },
-  featureIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "rgba(137, 172, 255, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-  featureTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#ffffff",
-    marginBottom: 8,
-  },
-  featureDescription: {
-    fontSize: 14,
-    color: "#9ca3af",
-    lineHeight: 20,
-  },
-  techStack: {
-    gap: 12,
-  },
-  techItem: {
-    backgroundColor: "#0f141a",
-    borderRadius: 12,
-    padding: 16,
-    borderLeftWidth: 3,
-    borderLeftColor: "#89acff",
-  },
-  techLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#89acff",
-    marginBottom: 4,
-    letterSpacing: 0.5,
-  },
-  techValue: {
-    fontSize: 13,
-    color: "#9ca3af",
-  },
-  ctaSection: {
-    alignItems: "center",
-    marginTop: 20,
-  },
-  buttonWrapper: {
+  photo: {
     width: "100%",
-    marginBottom: 40,
+    height: 220,
+    borderRadius: 10,
   },
-  button: {
-    height: 56,
-    borderRadius: 16,
+  row: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
     gap: 8,
+    flexWrap: "wrap",
   },
-  buttonText: {
-    fontSize: 15,
+  label: {
+    color: "#89acff",
     fontWeight: "700",
-    color: "#0a0e14",
-    letterSpacing: 1,
+    fontSize: 14,
   },
-  footer: {
-    alignItems: "center",
-    gap: 12,
+  value: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "500",
   },
-  footerText: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  footerLinks: {
+  actionRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    borderWidth: 1,
+    borderColor: "#89acff",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#1d2430",
   },
-  footerLink: {
-    fontSize: 13,
-    color: "#9ca3af",
-  },
-  footerDivider: {
-    color: "#6b7280",
+  actionText: {
+    color: "#89acff",
+    fontWeight: "700",
+    fontSize: 14,
   },
 });
