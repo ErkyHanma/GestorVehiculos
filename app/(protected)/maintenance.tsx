@@ -1,6 +1,7 @@
 import { useAuth } from "@/context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,7 +18,14 @@ import {
 
 const API_BASE = "https://taller-itla.ia3x.com/api";
 
-// Types
+type Vehicle = {
+  id: number;
+  placa: string;
+  marca: string;
+  modelo: string;
+  anio: number;
+};
+
 type Maintenance = {
   id: number;
   vehiculo_id: number;
@@ -28,24 +36,56 @@ type Maintenance = {
   fotos: string[];
 };
 
-// Main Screen
+const formatDate = (fecha: string) => {
+  const date = new Date(fecha);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
 export default function MaintenanceScreen() {
   const { token } = useAuth();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [showVehicleSelector, setShowVehicleSelector] = useState(false);
   const [records, setRecords] = useState<Maintenance[]>([]);
-  const [selected, setSelected] = useState<Maintenance | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<Maintenance | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [filterTipo, setFilterTipo] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [vehiculoId, setVehiculoId] = useState("");
 
-  // Se necesita vehiculo_id — en producción
-  // viene de la navegación desde Vehicles. Por ahora manual.
-  const loadRecords = async (tipo = "") => {
-    if (!vehiculoId) return;
+  const totalCosto = records.reduce((sum, r) => sum + Number(r.costo), 0);
+
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
+
+  const fetchVehicles = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/vehiculos?page=1&limit=20`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setVehicles(data.data ?? []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingVehicles(false);
+    }
+  };
+
+  const loadRecords = async (tipo = "", vId?: number) => {
+    const id = vId ?? selectedVehicle?.id;
+    if (!id) return;
     setLoading(true);
     try {
       const res = await fetch(
-        `${API_BASE}/mantenimientos?vehiculo_id=${vehiculoId}&tipo=${tipo}&page=1&limit=20`,
+        `${API_BASE}/mantenimientos?vehiculo_id=${id}&tipo=${tipo}&page=1&limit=20`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       const data = await res.json();
@@ -63,24 +103,30 @@ export default function MaintenanceScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setSelected(data.data);
+      setSelectedRecord(data.data);
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleFilter = (tipo: string) => {
-    setFilterTipo(tipo);
-    loadRecords(tipo);
+  const handleSelectVehicle = (v: Vehicle) => {
+    setSelectedVehicle(v);
+    setShowVehicleSelector(false);
+    setRecords([]);
+    setFilterTipo("");
+    loadRecords("", v.id);
   };
 
-  if (selected)
+  if (selectedRecord)
     return (
       <MaintenanceDetail
-        record={selected}
+        record={selectedRecord}
         token={token!}
-        onBack={() => setSelected(null)}
-        onRefresh={() => fetchDetail(selected.id)}
+        onBack={() => {
+          setSelectedRecord(null);
+          loadRecords(filterTipo);
+        }}
+        onRefresh={() => fetchDetail(selectedRecord.id)}
       />
     );
 
@@ -88,68 +134,142 @@ export default function MaintenanceScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Maintenance Log</Text>
+        <View>
+          <Text style={styles.title}>Maintenance Log</Text>
+          <Text style={styles.subtitle}>
+            Health telemetry & service records
+          </Text>
+        </View>
         <TouchableOpacity
           style={styles.addBtn}
-          onPress={() => setShowForm(true)}
+          onPress={() => {
+            if (!selectedVehicle) {
+              Alert.alert(
+                "No vehicle selected",
+                "Please select a vehicle first.",
+              );
+              return;
+            }
+            setShowForm(true);
+          }}
         >
           <Text style={styles.addBtnText}>+ Log Service</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Vehicle ID input — temporal hasta tener desde Vehicles */}
-      <View style={styles.vehicleInputRow}>
-        <TextInput
-          style={styles.vehicleInput}
-          placeholder="Enter Vehicle ID..."
-          placeholderTextColor="#72757d"
-          keyboardType="numeric"
-          value={vehiculoId}
-          onChangeText={setVehiculoId}
-        />
-        <TouchableOpacity style={styles.loadBtn} onPress={() => loadRecords()}>
-          <Text style={styles.loadBtnText}>Load</Text>
+      <View>
+        {/* Vehicle Selector */}
+        <TouchableOpacity
+          style={styles.vehicleSelector}
+          onPress={() => setShowVehicleSelector(true)}
+        >
+          {loadingVehicles ? (
+            <ActivityIndicator color="#89acff" size="small" />
+          ) : selectedVehicle ? (
+            <>
+              <View>
+                <Text style={styles.vehicleSelectorPlate}>
+                  {selectedVehicle.placa}
+                </Text>
+                <Text style={styles.vehicleSelectorName}>
+                  {selectedVehicle.marca} {selectedVehicle.modelo} ·{" "}
+                  {selectedVehicle.anio}
+                </Text>
+              </View>
+              <Text style={styles.vehicleSelectorArrow}>▼</Text>
+            </>
+          ) : (
+            <>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
+                <Ionicons name="car-outline" size={16} color="#72757d" />
+                <Text style={styles.vehicleSelectorPlaceholder}>
+                  Select a vehicle...
+                </Text>
+              </View>
+              <Text style={styles.vehicleSelectorArrow}>▼</Text>
+            </>
+          )}
         </TouchableOpacity>
-      </View>
 
-      {/* Filter chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-      >
-        {[
-          "",
-          "Cambio de aceite",
-          "Frenos",
-          "Suspensión",
-          "Motor",
-          "Llantas",
-        ].map((tipo) => (
+        {/* Stats */}
+        {records.length > 0 && (
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Total Cost</Text>
+              <Text style={styles.statValue}>
+                RD$ {totalCosto.toLocaleString("es-DO")}
+              </Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Records</Text>
+              <Text style={styles.statValue}>{records.length}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Filter chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+          style={{ maxHeight: 50 }}
+        >
           <TouchableOpacity
-            key={tipo}
-            style={[styles.chip, filterTipo === tipo && styles.chipActive]}
-            onPress={() => handleFilter(tipo)}
+            style={[styles.chip, filterTipo === "" && styles.chipActive]}
+            onPress={() => {
+              setFilterTipo("");
+              loadRecords("");
+            }}
           >
             <Text
               style={[
                 styles.chipText,
-                filterTipo === tipo && styles.chipTextActive,
+                filterTipo === "" && styles.chipTextActive,
               ]}
             >
-              {tipo === "" ? "All" : tipo}
+              All
             </Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          {[
+            "Oil Change",
+            "Brakes",
+            "Suspension",
+            "Tires",
+            "Engine",
+            "Electrical",
+            "Bodywork",
+            "Other",
+          ].map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.chip, filterTipo === cat && styles.chipActive]}
+              onPress={() => {
+                setFilterTipo(cat);
+                loadRecords(cat);
+              }}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  filterTipo === cat && styles.chipTextActive,
+                ]}
+              >
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
-      {/* List */}
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator color="#89acff" size="large" />
         </View>
       ) : (
         <FlatList
+          style={{ flex: 1 }}
           data={records}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={{ padding: 16, gap: 12 }}
@@ -159,44 +279,104 @@ export default function MaintenanceScreen() {
               onPress={() => fetchDetail(item.id)}
             >
               <View style={styles.cardTop}>
-                <View style={styles.cardIcon}>
-                  <Text style={styles.cardIconText}>🔧</Text>
+                <View style={styles.cardIconBox}>
+                  <Ionicons name="build-outline" size={22} color="#89acff" />
                 </View>
                 <View style={styles.cardInfo}>
                   <Text style={styles.cardTitle}>{item.tipo}</Text>
-                  <Text style={styles.cardDate}>{item.fecha}</Text>
+                  <Text style={styles.cardDate}>
+                    {formatDate(item.fecha)} · {selectedVehicle?.placa}
+                  </Text>
                 </View>
-                <Text style={styles.cardCost}>
-                  RD$ {item.costo.toLocaleString("es-DO")}
-                </Text>
+                <View style={styles.cardRight}>
+                  <Text style={styles.cardCost}>
+                    RD$ {item.costo.toLocaleString("es-DO")}
+                  </Text>
+                  <View style={styles.verifiedBadge}>
+                    <Text style={styles.verifiedBadgeText}>Verified</Text>
+                  </View>
+                </View>
               </View>
+
               {item.piezas ? (
-                <Text style={styles.cardParts} numberOfLines={1}>
-                  Parts: {item.piezas}
-                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={styles.partsRow}>
+                    {item.piezas.split(",").map((p, i) => (
+                      <View key={i} style={styles.partTag}>
+                        <Text style={styles.partTagText}>PART: {p.trim()}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
               ) : null}
+
               {item.fotos?.length > 0 && (
                 <Text style={styles.cardPhotos}>
-                  📷 {item.fotos.length} photo{item.fotos.length > 1 ? "s" : ""}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                      marginTop: 6,
+                    }}
+                  >
+                    <Ionicons name="camera-outline" size={12} color="#ffb7fc" />
+                    <Text style={styles.cardPhotos}>
+                      {item.fotos.length} photo
+                      {item.fotos.length > 1 ? "s" : ""}
+                    </Text>
+                  </View>
                 </Text>
               )}
             </TouchableOpacity>
           )}
           ListEmptyComponent={
             <Text style={styles.emptyText}>
-              {vehiculoId
+              {selectedVehicle
                 ? "No maintenance records found."
-                : "Enter a vehicle ID to load records."}
+                : "Select a vehicle to load records."}
             </Text>
           }
         />
       )}
 
+      {/* Vehicle Selector Modal */}
+      <Modal visible={showVehicleSelector} animationType="slide" transparent>
+        <View style={styles.selectorOverlay}>
+          <View style={styles.selectorSheet}>
+            <Text style={styles.selectorTitle}>Select Vehicle</Text>
+            {vehicles.map((v) => (
+              <TouchableOpacity
+                key={v.id}
+                style={styles.selectorItem}
+                onPress={() => handleSelectVehicle(v)}
+              >
+                <View style={styles.selectorPlateTag}>
+                  <Text style={styles.selectorPlate}>{v.placa}</Text>
+                </View>
+                <View>
+                  <Text style={styles.selectorName}>
+                    {v.marca} {v.modelo}
+                  </Text>
+                  <Text style={styles.selectorYear}>{v.anio}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.selectorCancel}
+              onPress={() => setShowVehicleSelector(false)}
+            >
+              <Text style={styles.selectorCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Form Modal */}
       <Modal visible={showForm} animationType="slide">
         <MaintenanceForm
           token={token!}
-          vehiculoId={vehiculoId}
+          vehiculoId={selectedVehicle?.id.toString() ?? ""}
           onClose={() => setShowForm(false)}
           onSuccess={() => {
             setShowForm(false);
@@ -207,8 +387,7 @@ export default function MaintenanceScreen() {
     </View>
   );
 }
-
-// Maintenance Detail
+// ─── Maintenance Detail ───────────────────────────────────
 function MaintenanceDetail({
   record,
   token,
@@ -251,66 +430,99 @@ function MaintenanceDetail({
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-
       onRefresh();
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
       <TouchableOpacity style={styles.backBtn} onPress={onBack}>
         <Text style={styles.backBtnText}>← Back</Text>
       </TouchableOpacity>
 
-      {/* Info */}
       <View style={styles.detailHeader}>
-        <Text style={styles.detailTitle}>{record.tipo}</Text>
-        <Text style={styles.detailSubtitle}>{record.fecha}</Text>
+        <View style={styles.detailIconBox}>
+          <Ionicons name="build-outline" size={26} color="#89acff" />
+        </View>
+        <View>
+          <Text style={styles.detailTitle}>{record.tipo}</Text>
+          <Text style={styles.detailSubtitle}>{formatDate(record.fecha)}</Text>
+        </View>
       </View>
 
-      <View style={styles.detailCards}>
-        <DetailCard
-          label="Cost"
-          value={`RD$ ${record.costo.toLocaleString("es-DO")}`}
-        />
-        {record.piezas ? (
-          <DetailCard label="Parts" value={record.piezas} />
-        ) : null}
+      <View style={styles.costCard}>
+        <Text style={styles.costLabel}>Service Cost</Text>
+        <Text style={styles.costValue}>
+          RD${" "}
+          {record.costo.toLocaleString("es-DO", { minimumFractionDigits: 2 })}
+        </Text>
       </View>
 
-      {/* Photo Gallery */}
+      {record.piezas ? (
+        <View style={styles.partsSection}>
+          <Text style={styles.partsSectionTitle}>Parts Used</Text>
+          <View style={styles.partsTagsRow}>
+            {record.piezas.split(",").map((p, i) => (
+              <View key={i} style={styles.partTag}>
+                <Text style={styles.partTagText}>PART: {p.trim()}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       <View style={styles.gallerySection}>
         <View style={styles.galleryHeader}>
           <Text style={styles.galleryTitle}>
-            Photos ({record.fotos?.length ?? 0}/5)
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+            >
+              <Ionicons name="images-outline" size={16} color="#f1f3fc" />
+              <Text style={styles.galleryTitle}>
+                Service Visuals ({record.fotos?.length ?? 0}/5)
+              </Text>
+            </View>
           </Text>
           {(record.fotos?.length ?? 0) < 5 && (
             <TouchableOpacity
               style={styles.addPhotoBtn}
               onPress={handleAddPhotos}
             >
-              <Text style={styles.addPhotoBtnText}>+ Add Photos</Text>
+              <Text style={styles.addPhotoBtnText}>+ Add</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {record.fotos?.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.photoRow}>
-              {record.fotos.map((uri, i) => (
-                <Image key={i} source={{ uri }} style={styles.galleryPhoto} />
-              ))}
-            </View>
-          </ScrollView>
+          <View style={styles.photoGrid}>
+            {record.fotos.map((uri, i) => (
+              <Image
+                key={i}
+                source={{ uri }}
+                style={i === 0 ? styles.photoMain : styles.photoThumb}
+              />
+            ))}
+          </View>
         ) : (
-          <Text style={styles.emptyText}>No photos yet.</Text>
+          <TouchableOpacity
+            style={styles.addPhotosEmpty}
+            onPress={handleAddPhotos}
+          >
+            <Ionicons name="camera-outline" size={24} color="#72757d" />
+            <Text style={[styles.addPhotosEmptyText, { marginTop: 8 }]}>
+              Add photos to this record
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
     </ScrollView>
   );
 }
 
-// Maintenance Form
+// ─── Maintenance Form ─────────────────────────────────────
 function MaintenanceForm({
   token,
   vehiculoId,
@@ -322,8 +534,18 @@ function MaintenanceForm({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const CATEGORIES = [
+    "Oil Change",
+    "Brakes",
+    "Suspension",
+    "Tires",
+    "Engine",
+    "Electrical",
+    "Bodywork",
+    "Other",
+  ];
+
   const [form, setForm] = useState({
-    vehiculo_id: vehiculoId,
     tipo: "",
     costo: "",
     piezas: "",
@@ -349,19 +571,21 @@ function MaintenanceForm({
   };
 
   const handleSave = async () => {
-    if (!form.tipo || !form.costo || !form.vehiculo_id) {
-      Alert.alert("Error", "Vehicle ID, type and cost are required.");
+    if (!form.tipo || !form.costo) {
+      Alert.alert("Error", "Type and cost are required.");
       return;
     }
     setSaving(true);
     try {
       const formData = new FormData();
+      const parsedCosto = Number(form.costo.replace(",", "."));
+
       formData.append(
         "datax",
         JSON.stringify({
-          vehiculo_id: Number(form.vehiculo_id),
+          vehiculo_id: Number(vehiculoId),
           tipo: form.tipo,
-          costo: Number(form.costo),
+          costo: parsedCosto,
           piezas: form.piezas,
           fecha: form.fecha,
         }),
@@ -380,7 +604,6 @@ function MaintenanceForm({
         body: formData,
       });
       const data = await res.json();
-
       if (data.success) {
         onSuccess();
       } else {
@@ -396,39 +619,85 @@ function MaintenanceForm({
   return (
     <ScrollView style={styles.container}>
       <View style={styles.formHeader}>
-        <Text style={styles.title}>New Service</Text>
+        <View>
+          <Text style={styles.title}>New Service</Text>
+          <Text style={styles.subtitle}>Register new entry</Text>
+        </View>
         <TouchableOpacity onPress={onClose}>
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Category selector */}
+      <View style={styles.fieldGroup}>
+        <Text style={styles.fieldLabel}>SERVICE CATEGORY</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                style={[
+                  styles.categoryChip,
+                  form.tipo === cat && styles.categoryChipActive,
+                ]}
+                onPress={() => setForm({ ...form, tipo: cat })}
+              >
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    form.tipo === cat && styles.categoryChipTextActive,
+                  ]}
+                >
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+
       {[
-        { key: "vehiculo_id", placeholder: "Vehicle ID", keyboard: "numeric" },
-        { key: "tipo", placeholder: "Type (e.g. Oil Change)" },
-        { key: "costo", placeholder: "Cost (RD$)", keyboard: "numeric" },
-        { key: "piezas", placeholder: "Parts used (optional)" },
-        { key: "fecha", placeholder: "Date (YYYY-MM-DD)" },
-      ].map(({ key, placeholder, keyboard }) => (
-        <TextInput
-          key={key}
-          style={styles.input}
-          placeholder={placeholder}
-          placeholderTextColor="#72757d"
-          keyboardType={keyboard as any}
-          value={(form as any)[key]}
-          onChangeText={(text) => setForm({ ...form, [key]: text })}
-        />
+        {
+          key: "costo",
+          label: "COST (RD$)",
+          placeholder: "0.00",
+          keyboard: "numeric",
+        },
+        {
+          key: "piezas",
+          label: "PARTS USED (BOM)",
+          placeholder: "Filter, oil 5W-30...",
+        },
+        { key: "fecha", label: "DATE", placeholder: "YYYY-MM-DD" },
+      ].map(({ key, label, placeholder, keyboard }) => (
+        <View key={key} style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>{label}</Text>
+          <TextInput
+            style={styles.fieldInput}
+            placeholder={placeholder}
+            placeholderTextColor="#72757d"
+            keyboardType={keyboard as any}
+            value={(form as any)[key]}
+            onChangeText={(text) => setForm({ ...form, [key]: text })}
+          />
+        </View>
       ))}
 
-      {/* Photo picker */}
       <TouchableOpacity style={styles.photoPickerBtn} onPress={pickPhotos}>
-        <Text style={styles.photoPickerText}>
-          📷 Add Photos ({photos.length}/5)
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Ionicons name="camera-outline" size={18} color="#72757d" />
+          <Text style={styles.photoPickerText}>
+            Add Photos ({photos.length}/5)
+          </Text>
+        </View>
       </TouchableOpacity>
 
       {photos.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginHorizontal: 16, marginTop: 12 }}
+        >
           <View style={styles.photoRow}>
             {photos.map((p, i) => (
               <Image
@@ -447,24 +716,14 @@ function MaintenanceForm({
         disabled={saving}
       >
         <Text style={styles.saveBtnText}>
-          {saving ? "Saving..." : "Save Record"}
+          {saving ? "Saving..." : "✓ Commit to Record"}
         </Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
-// Detail Card
-function DetailCard({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.detailCard}>
-      <Text style={styles.detailCardLabel}>{label}</Text>
-      <Text style={styles.detailCardValue}>{value}</Text>
-    </View>
-  );
-}
-
-// Styles
+// ─── Styles ───────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0a0e14" },
   centered: {
@@ -476,11 +735,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-end",
     padding: 16,
     paddingTop: 60,
   },
-  title: { color: "#f1f3fc", fontSize: 28, fontWeight: "bold" },
+  title: { color: "#f1f3fc", fontSize: 26, fontWeight: "bold" },
+  subtitle: { color: "#72757d", fontSize: 12, marginTop: 2 },
   addBtn: {
     backgroundColor: "#89acff",
     paddingHorizontal: 16,
@@ -488,38 +748,63 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   addBtnText: { color: "#002b6a", fontWeight: "bold", fontSize: 13 },
-  vehicleInputRow: {
+  vehicleSelector: {
     flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  vehicleInput: {
-    flex: 1,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginBottom: 12,
     backgroundColor: "#151a21",
     borderRadius: 12,
-    padding: 12,
-    color: "#f1f3fc",
+    padding: 14,
     borderWidth: 1,
     borderColor: "#20262f",
   },
-  loadBtn: {
-    backgroundColor: "#20262f",
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#44484f",
+  vehicleSelectorPlate: {
+    color: "#89acff",
+    fontSize: 14,
+    fontWeight: "700",
+    fontFamily: "monospace",
+    letterSpacing: 1,
   },
-  loadBtnText: { color: "#89acff", fontWeight: "600" },
-  filterRow: { paddingHorizontal: 16, gap: 8, paddingBottom: 12 },
+  vehicleSelectorName: { color: "#72757d", fontSize: 12, marginTop: 2 },
+  vehicleSelectorPlaceholder: { color: "#72757d", fontSize: 14 },
+  vehicleSelectorArrow: { color: "#89acff", fontSize: 12 },
+  statsRow: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    gap: 12,
+    marginBottom: 4,
+  },
+
+  statCard: {
+    flex: 1,
+    backgroundColor: "#151a21",
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#20262f",
+  },
+  statLabel: {
+    color: "#72757d",
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  statValue: { color: "#89acff", fontSize: 18, fontWeight: "bold" },
+  filterRow: { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: "#151a21",
     borderWidth: 1,
     borderColor: "#20262f",
+    height: 34,
+    justifyContent: "center",
+    alignItems: "center",
   },
   chipActive: {
     backgroundColor: "rgba(137,172,255,0.15)",
@@ -530,9 +815,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   chipTextActive: { color: "#89acff" },
+  filterClearBtn: { padding: 8 },
+  filterClearText: { color: "#72757d", fontSize: 14 },
   card: {
     backgroundColor: "#151a21",
     borderRadius: 12,
@@ -542,11 +829,11 @@ const styles = StyleSheet.create({
   },
   cardTop: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 12,
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  cardIcon: {
+  cardIconBox: {
     width: 44,
     height: 44,
     borderRadius: 10,
@@ -556,39 +843,132 @@ const styles = StyleSheet.create({
   },
   cardIconText: { fontSize: 20 },
   cardInfo: { flex: 1 },
-  cardTitle: { color: "#f1f3fc", fontSize: 16, fontWeight: "bold" },
+  cardTitle: { color: "#f1f3fc", fontSize: 15, fontWeight: "bold" },
   cardDate: { color: "#72757d", fontSize: 12, marginTop: 2 },
-  cardCost: { color: "#89acff", fontSize: 15, fontWeight: "bold" },
-  cardParts: { color: "#72757d", fontSize: 12, marginTop: 4 },
-  cardPhotos: { color: "#ffb7fc", fontSize: 12, marginTop: 4 },
+  cardRight: { alignItems: "flex-end" },
+  cardCost: { color: "#f1f3fc", fontSize: 16, fontWeight: "bold" },
+  verifiedBadge: {
+    backgroundColor: "rgba(255,183,252,0.1)",
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 20,
+    marginTop: 4,
+  },
+  verifiedBadgeText: {
+    color: "#ffb7fc",
+    fontSize: 9,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  partsRow: { flexDirection: "row", gap: 6, marginTop: 6 },
+  partTag: {
+    backgroundColor: "#20262f",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  partTagText: { color: "#a8abb3", fontSize: 10, fontFamily: "monospace" },
+  cardPhotos: { color: "#ffb7fc", fontSize: 12, marginTop: 6 },
   emptyText: {
     color: "#72757d",
     textAlign: "center",
     marginTop: 40,
     padding: 16,
   },
+  selectorOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "flex-end",
+  },
+  selectorSheet: {
+    backgroundColor: "#151a21",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  selectorTitle: {
+    color: "#f1f3fc",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  selectorItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#20262f",
+  },
+  selectorPlateTag: {
+    backgroundColor: "#0a0e14",
+    borderWidth: 1,
+    borderColor: "#20262f",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  selectorPlate: {
+    color: "#89acff",
+    fontSize: 13,
+    fontFamily: "monospace",
+    letterSpacing: 1,
+  },
+  selectorName: { color: "#f1f3fc", fontSize: 14, fontWeight: "600" },
+  selectorYear: { color: "#72757d", fontSize: 12, marginTop: 2 },
+  selectorCancel: { marginTop: 16, padding: 14, alignItems: "center" },
+  selectorCancelText: { color: "#ff7076", fontSize: 16 },
   backBtn: { padding: 16, paddingTop: 60 },
   backBtnText: { color: "#89acff", fontSize: 16 },
-  detailHeader: { paddingHorizontal: 16, marginBottom: 16 },
-  detailTitle: { color: "#f1f3fc", fontSize: 24, fontWeight: "bold" },
-  detailSubtitle: { color: "#72757d", fontSize: 14, marginTop: 4 },
-  detailCards: { paddingHorizontal: 16, gap: 12, marginBottom: 24 },
-  detailCard: {
+  detailHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  detailIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: "#20262f",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  detailIconText: { fontSize: 24 },
+  detailTitle: { color: "#f1f3fc", fontSize: 22, fontWeight: "bold" },
+  detailSubtitle: { color: "#72757d", fontSize: 13, marginTop: 2 },
+  costCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
     backgroundColor: "#151a21",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 14,
+    padding: 20,
+    borderLeftWidth: 3,
+    borderLeftColor: "#89acff",
     borderWidth: 1,
     borderColor: "#20262f",
   },
-  detailCardLabel: {
+  costLabel: {
     color: "#72757d",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 6,
   },
-  detailCardValue: { color: "#f1f3fc", fontSize: 16, fontWeight: "500" },
+  costValue: { color: "#f1f3fc", fontSize: 28, fontWeight: "bold" },
+  partsSection: { marginHorizontal: 16, marginBottom: 16 },
+  partsSectionTitle: {
+    color: "#72757d",
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  partsTagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   gallerySection: { paddingHorizontal: 16, marginBottom: 40 },
   galleryHeader: {
     flexDirection: "row",
@@ -596,7 +976,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  galleryTitle: { color: "#f1f3fc", fontSize: 16, fontWeight: "bold" },
+  galleryTitle: { color: "#f1f3fc", fontSize: 15, fontWeight: "bold" },
   addPhotoBtn: {
     backgroundColor: "#20262f",
     paddingHorizontal: 12,
@@ -606,36 +986,54 @@ const styles = StyleSheet.create({
     borderColor: "#44484f",
   },
   addPhotoBtnText: { color: "#89acff", fontSize: 12, fontWeight: "600" },
-  photoRow: { flexDirection: "row", gap: 8, paddingVertical: 4 },
-  galleryPhoto: {
-    width: 160,
-    height: 120,
-    borderRadius: 10,
+  photoGrid: { gap: 8 },
+  photoMain: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
     backgroundColor: "#20262f",
   },
   photoThumb: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: 100,
+    height: 100,
+    borderRadius: 10,
     backgroundColor: "#20262f",
   },
+  addPhotosEmpty: {
+    backgroundColor: "#151a21",
+    borderRadius: 12,
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#20262f",
+    borderStyle: "dashed",
+  },
+  addPhotosEmptyText: { color: "#72757d", fontSize: 14 },
   formHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-end",
     padding: 16,
     paddingTop: 60,
   },
   cancelText: { color: "#ff7076", fontSize: 16 },
-  input: {
-    margin: 16,
-    marginBottom: 0,
+  fieldGroup: { paddingHorizontal: 16, marginBottom: 16 },
+  fieldLabel: {
+    color: "#72757d",
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  fieldInput: {
     backgroundColor: "#151a21",
     borderRadius: 12,
     padding: 14,
     color: "#f1f3fc",
     borderWidth: 1,
     borderColor: "#20262f",
+    fontSize: 15,
   },
   photoPickerBtn: {
     margin: 16,
@@ -648,12 +1046,28 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
   },
   photoPickerText: { color: "#72757d", fontSize: 15 },
+  photoRow: { flexDirection: "row", gap: 8 },
   saveBtn: {
     margin: 16,
+    marginTop: 24,
     backgroundColor: "#89acff",
     borderRadius: 12,
     padding: 16,
     alignItems: "center",
   },
   saveBtnText: { color: "#002b6a", fontWeight: "bold", fontSize: 16 },
+  categoryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#151a21",
+    borderWidth: 1,
+    borderColor: "#20262f",
+  },
+  categoryChipActive: {
+    backgroundColor: "rgba(137,172,255,0.15)",
+    borderColor: "#89acff",
+  },
+  categoryChipText: { color: "#72757d", fontSize: 12, fontWeight: "600" },
+  categoryChipTextActive: { color: "#89acff" },
 });
