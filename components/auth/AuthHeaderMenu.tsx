@@ -83,6 +83,29 @@ const AuthHeaderMenu = () => {
                   <Text style={styles.menuItemText}>Login</Text>
                 </TouchableOpacity>
               )}
+
+              {!(isLogin && isSignUp) && (
+                <>
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => handleNavigation("/(auth)/sign-up")}
+                  >
+                    <Ionicons
+                      name="person-add-outline"
+                      size={20}
+                      color="#89acff"
+                    />
+                    <Text style={styles.menuItemText}>Sign Up</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => handleNavigation("/(auth)/login")}
+                  >
+                    <Ionicons name="log-in-outline" size={20} color="#89acff" />
+                    <Text style={styles.menuItemText}>Login</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </View>
         </Pressable>

@@ -4,6 +4,74 @@ import Constants from "expo-constants";
 const API_URL =
   Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL;
 
+export const forgetPassword = async (studentId: string) => {
+  try {
+    const body = new URLSearchParams();
+    body.append("datax", JSON.stringify({ matricula: studentId }));
+
+    const response = await fetch(`${API_URL}auth/olvidar`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: body.toString(),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Account activation failed");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Account activation error:", error);
+    throw error instanceof Error
+      ? error
+      : new Error("Account activation failed");
+  }
+};
+export const changePassword = async ({
+  currentPassword,
+  newPassword,
+}: {
+  currentPassword: string;
+  newPassword: string;
+}) => {
+  const token = await AsyncStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("No se encontró el token de autenticación.");
+  }
+
+  try {
+    const body = new URLSearchParams();
+    body.append(
+      "datax",
+      JSON.stringify({ actual: currentPassword, nueva: newPassword }),
+    );
+
+    const response = await fetch(`${API_URL}auth/cambiar-clave`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: body.toString(),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Account activation failed");
+    }
+  } catch (error) {
+    console.error("Account activation error:", error);
+    throw error instanceof Error
+      ? error
+      : new Error("Account activation failed");
+  }
+};
+
 export const getNews = async () => {
   const token = await AsyncStorage.getItem("token");
 
