@@ -20,7 +20,7 @@ type TeamMember = {
   photoUrl: string;
 };
 
-const teamMembers: TeamMember[] = [
+export const teamMembers: TeamMember[] = [
   {
     id: "1",
     fullName: "Nombre Apellido 1",
