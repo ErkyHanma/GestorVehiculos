@@ -31,6 +31,7 @@ export const forgetPassword = async (studentId: string) => {
       : new Error("Account activation failed");
   }
 };
+
 export const changePassword = async ({
   currentPassword,
   newPassword,
@@ -55,6 +56,7 @@ export const changePassword = async ({
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Bearer ${token}`,
       },
       body: body.toString(),
     });
@@ -69,6 +71,60 @@ export const changePassword = async ({
     throw error instanceof Error
       ? error
       : new Error("Account activation failed");
+  }
+};
+
+export const refreshToken = async () => {
+  const token = await AsyncStorage.getItem("refreshToken");
+
+  if (!token) {
+    throw new Error("No se encontró el token de autenticación.");
+  }
+
+  try {
+    const body = new URLSearchParams();
+    body.append("datax", JSON.stringify({ refreshToken }));
+
+    const response = await fetch(`${API_URL}auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: body.toString(),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Token refresh failed");
+    }
+
+    return {
+      token: data.token,
+      refreshToken: data.refreshToken,
+    };
+  } catch (error) {
+    console.error("Token refresh error:", error);
+    throw error instanceof Error ? error : new Error("Token refresh failed");
+  }
+};
+
+export const getCurrentUser = async () => {
+  const token = await AsyncStorage.getItem("token");
+
+  try {
+    const response = await fetch(`${API_URL}perfil`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error("Error fetching current user:", error);
+    throw error;
   }
 };
 

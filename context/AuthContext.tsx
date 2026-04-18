@@ -1,3 +1,4 @@
+import { getCurrentUser, refreshToken } from "@/services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import React, {
@@ -71,18 +72,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadStoredAuth = async () => {
     try {
       const storedToken = await AsyncStorage.getItem("token");
-      const storedUser = await AsyncStorage.getItem("user");
+      const storedRefreshToken = await AsyncStorage.getItem("refreshToken");
 
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+      if (storedToken) {
+        const userData = await getCurrentUser();
+        if (userData) {
+          setToken(storedToken);
+          setUser(userData);
+        }
+      } else if (storedRefreshToken) {
+        // No access token but refresh token exists — try to get a new access token
+        try {
+          const res = await refreshToken();
+
+          localStorage.setItem("token", res.token);
+          localStorage.setItem("refreshToken", res.refreshToken);
+          setToken(res.token);
+
+          const userData = await getCurrentUser();
+          if (userData) {
+            setToken(storedToken);
+            setUser(userData);
+          }
+        } catch {
+          // Refresh token is invalid/expired — clear everything
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+        }
       }
     } catch (error) {
       console.error("Failed to load stored auth:", error);
     }
   };
 
-  const login = async (studentId: string, password: string) => {
+    const login = async (studentId: string, password: string) => {
     setIsLoading(true);
     try {
       const body = new URLSearchParams();
