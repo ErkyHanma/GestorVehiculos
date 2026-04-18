@@ -25,7 +25,7 @@ const HeaderMenu = () => {
   const handleSignOut = () => {
     signOut();
     setMenuVisible(false);
-    router.push("/(auth)/login");
+    router.replace("/(auth)/login");
   };
 
   return (

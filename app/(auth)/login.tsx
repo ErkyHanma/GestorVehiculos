@@ -12,18 +12,17 @@ import {
 } from "react-native";
 
 const Login = () => {
-  const { login, isLoading, isAuthenticated } = useAuth();
+  const { login, isLoading, isAuthenticated, token } = useAuth();
   const [studentId, setStudentId] = useState("");
   const [accessKey, setAccessKey] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && token) {
       router.replace("/(public)");
-      // router.replace("/(protected)/profile");
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, token]);
 
   const handleLogin = async () => {
     if (!studentId || !accessKey) {
@@ -35,7 +34,6 @@ const Login = () => {
       setError("");
       await login(studentId, accessKey);
       router.replace("/(public)");
-      // router.replace("/(protected)/profile");
     } catch (err) {
       setError("Authentication failed. Please check your credentials.");
     }

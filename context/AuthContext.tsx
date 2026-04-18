@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-    const login = async (studentId: string, password: string) => {
+  const login = async (studentId: string, password: string) => {
     setIsLoading(true);
     try {
       const body = new URLSearchParams();
@@ -188,12 +188,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
+      setToken(null);
+      setUser(null);
+
       await AsyncStorage.removeItem("token");
       await AsyncStorage.removeItem("refreshToken");
       await AsyncStorage.removeItem("user");
-
-      setToken(null);
-      setUser(null);
     } catch (error) {
       console.error("Sign out error:", error);
     }
