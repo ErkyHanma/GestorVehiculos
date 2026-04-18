@@ -138,6 +138,14 @@ export default function RootLayout() {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="changePassword"
+        options={{
+          title: "Change Password",
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

@@ -14,6 +14,8 @@ import {
 const ChangePassword = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -30,12 +32,14 @@ const ChangePassword = () => {
         currentPassword,
         newPassword,
       });
+      setCurrentPassword("");
       setNewPassword("");
-      router.replace("/(public)");
+      router.replace("/(protected)/profile");
     } catch (err) {
       setError("Failed to change password. Please try again.");
     } finally {
       setIsLoading(false);
+      
     }
   };
 
@@ -66,20 +70,29 @@ const ChangePassword = () => {
             <Text style={styles.label}>CURRENT PASSWORD</Text>
             <View style={styles.inputContainer}>
               <Ionicons
-                name="car-outline"
+                name="lock-closed-outline"
                 size={20}
                 color="#89acff"
                 style={styles.inputIcon}
               />
               <TextInput
                 style={styles.input}
-                placeholder="e.g. ********"
+                placeholder="••••••••"
                 placeholderTextColor="#6b7280"
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
-                autoCapitalize="characters"
-                secureTextEntry
+                secureTextEntry={!showCurrentPassword}
               />
+              <TouchableOpacity
+                onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showCurrentPassword ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color="#6b7280"
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -87,36 +100,48 @@ const ChangePassword = () => {
             <Text style={styles.label}>NEW PASSWORD</Text>
             <View style={styles.inputContainer}>
               <Ionicons
-                name="car-outline"
+                name="lock-closed-outline"
                 size={20}
                 color="#89acff"
                 style={styles.inputIcon}
               />
               <TextInput
                 style={styles.input}
-                placeholder="e.g. ********"
+                placeholder="••••••••"
                 placeholderTextColor="#6b7280"
                 value={newPassword}
                 onChangeText={setNewPassword}
-                autoCapitalize="characters"
-                secureTextEntry
+                secureTextEntry={!showNewPassword}
               />
+              <TouchableOpacity
+                onPress={() => setShowNewPassword(!showNewPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showNewPassword ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color="#6b7280"
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
           {/* Change Password Button */}
           <TouchableOpacity
-            style={styles.buttonWrapper}
+            style={[styles.buttonWrapper, isLoading && styles.buttonWrapperDisabled]}
             onPress={handleChangePassword}
             disabled={isLoading}
+            activeOpacity={0.85}
           >
             {isLoading ? (
               <ActivityIndicator color="#0a0e14" />
             ) : (
-              <>
+              <View style={styles.buttonContent}>
                 <Text style={styles.buttonText}>CHANGE PASSWORD</Text>
-                <Ionicons name="arrow-forward" size={20} color="#0a0e14" />
-              </>
+                <View style={styles.buttonIconContainer}>
+                  <Ionicons name="arrow-forward" size={18} color="#0a0e14" />
+                </View>
+              </View>
             )}
           </TouchableOpacity>
 
@@ -242,20 +267,34 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     marginBottom: 32,
     backgroundColor: "#89acff",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
     borderRadius: 16,
-    paddingVertical: 16,
+    minHeight: 56,
+    paddingHorizontal: 16,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(137, 172, 255, 0.25)",
+    shadowColor: "#89acff",
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
   },
-  button: {
-    height: 56,
-    borderRadius: 16,
+  buttonWrapperDisabled: {
+    opacity: 0.75,
+  },
+  buttonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
+  },
+  buttonIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(10, 14, 20, 0.14)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonText: {
     fontSize: 15,

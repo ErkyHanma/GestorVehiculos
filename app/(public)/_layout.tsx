@@ -75,14 +75,6 @@ export default function PublicTabsLayout() {
       />
 
       <Tabs.Screen
-        name="changePassword"
-        options={{
-          title: "Change Password",
-          href: null,
-        }}
-      />
-
-      <Tabs.Screen
         name="about"
         options={{
           href: null,
