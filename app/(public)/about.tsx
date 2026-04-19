@@ -1,3 +1,4 @@
+import { teamMembers } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
@@ -9,37 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-type TeamMember = {
-  id: string;
-  fullName: string;
-  matricula: string;
-  phone: string;
-  telegramUrl: string;
-  email: string;
-  photoUrl: string;
-};
-
-export const teamMembers: TeamMember[] = [
-  {
-    id: "1",
-    fullName: "Nombre Apellido 1",
-    matricula: "2023-0001",
-    phone: "+18095550101",
-    telegramUrl: "https://t.me/username1",
-    email: "miembro1@itla.edu.do",
-    photoUrl: "https://i.pravatar.cc/400?img=12",
-  },
-  {
-    id: "2",
-    fullName: "Nombre Apellido 2",
-    matricula: "2023-0002",
-    phone: "+18095550102",
-    telegramUrl: "https://t.me/username2",
-    email: "miembro2@itla.edu.do",
-    photoUrl: "https://i.pravatar.cc/400?img=32",
-  },
-];
 
 const About = () => {
   const handleCall = async (phone: string) => {
@@ -60,7 +30,7 @@ const About = () => {
 
       {teamMembers.map((member) => (
         <View key={member.id} style={styles.card}>
-          <Image source={{ uri: member.photoUrl }} style={styles.photo} />
+          <Image source={member.photoUrl} style={styles.photo} />
 
           <View style={styles.row}>
             <Ionicons name="person" size={18} color="#89acff" />
@@ -82,13 +52,15 @@ const About = () => {
             <Text style={styles.actionText}>Telefono: {member.phone}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.actionRow}
-            onPress={() => handleOpenTelegram(member.telegramUrl)}
-          >
-            <Ionicons name="paper-plane" size={18} color="#89acff" />
-            <Text style={styles.actionText}>Telegram</Text>
-          </TouchableOpacity>
+          {member.telegramUrl && (
+            <TouchableOpacity
+              style={styles.actionRow}
+              onPress={() => handleOpenTelegram(member.telegramUrl ?? "")}
+            >
+              <Ionicons name="paper-plane" size={18} color="#89acff" />
+              <Text style={styles.actionText}>Telegram</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={styles.actionRow}
@@ -123,8 +95,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   card: {
-    backgroundColor: "#2c323d",
-    borderRadius: 10,
+    borderRadius: 4,
     padding: 14,
     gap: 12,
     borderWidth: 1,
@@ -132,7 +103,7 @@ const styles = StyleSheet.create({
   },
   photo: {
     width: "100%",
-    height: 220,
+    height: 300,
     borderRadius: 10,
   },
   row: {

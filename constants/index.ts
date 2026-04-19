@@ -26,3 +26,22 @@ export const HomeFeatures: Feature[] = [
     description: "Full insurance coverage",
   },
 ];
+
+export const teamMembers = [
+  {
+    id: "1",
+    fullName: "Yenzel Baez",
+    matricula: "2024-1824",
+    phone: "+18093002345",
+    email: "20241824@itla.edu.do",
+    photoUrl: require("../assets/images/Team_pfp/Yenzel_pfp.jpeg"),
+  },
+  {
+    id: "2",
+    fullName: "Cristian Emmanuel Pacheco",
+    matricula: "2024-2016",
+    phone: "+18095550102",
+    email: "20242016@itla.edu.do",
+    photoUrl: require("../assets/images/Team_pfp/Cristian_pfp.jpeg"),
+  },
+];
