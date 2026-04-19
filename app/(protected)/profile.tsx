@@ -1,6 +1,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -16,6 +17,7 @@ const API_BASE = "https://taller-itla.ia3x.com/api";
 
 export default function ProfileScreen() {
   const { token } = useAuth();
+  const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -150,6 +152,19 @@ export default function ProfileScreen() {
           <StatItem label="Group" value={profile?.grupo ?? "—"} />
         </View>
         <View style={styles.statsDivider} />
+      </View>
+
+      <View style={{ paddingHorizontal: 16 }}>
+        <TouchableOpacity
+          onPress={() => router.push("/(protected)/changePassword")}
+          style={styles.changePasswordBtn}
+          activeOpacity={0.85}
+        >
+          <View style={styles.changePasswordBtnContent}>
+            <Text style={styles.changePasswordBtnText}>Change Password</Text>
+            <Ionicons name="key-outline" size={16} color="#0a0e14" />
+          </View>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -297,6 +312,30 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   updatePhotoBtnText: { color: "#002b6a", fontWeight: "600", fontSize: 14 },
+  changePasswordBtn: {
+    backgroundColor: "#89acff",
+    borderRadius: 12,
+    minHeight: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(137,172,255,0.25)",
+    shadowColor: "#89acff",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  changePasswordBtnContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  changePasswordBtnText: {
+    color: "#0a0e14",
+    fontWeight: "700",
+    fontSize: 14,
+  },
   grid: {
     paddingHorizontal: 16,
     flexDirection: "row",

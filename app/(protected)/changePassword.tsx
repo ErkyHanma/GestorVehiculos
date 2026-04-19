@@ -1,7 +1,7 @@
-import { useAuth } from "@/context/AuthContext";
+import { changePassword } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -11,31 +11,35 @@ import {
   View,
 } from "react-native";
 
-const Login = () => {
-  const { login, isLoading, isAuthenticated, token } = useAuth();
-  const [studentId, setStudentId] = useState("");
-  const [accessKey, setAccessKey] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+const ChangePassword = () => {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      router.replace("/(public)");
-    }
-  }, [isAuthenticated, token]);
-
-  const handleLogin = async () => {
-    if (!studentId || !accessKey) {
+  const handleChangePassword = async () => {
+    if (!newPassword || !currentPassword) {
       setError("Please fill in all fields");
       return;
     }
 
     try {
+      setIsLoading(true);
       setError("");
-      await login(studentId, accessKey);
-      router.replace("/(public)");
+      await changePassword({
+        currentPassword,
+        newPassword,
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      router.replace("/(protected)/profile");
     } catch (err) {
-      setError("Authentication failed. Please check your credentials.");
+      setError("Failed to change password. Please try again.");
+    } finally {
+      setIsLoading(false);
+      
     }
   };
 
@@ -50,9 +54,9 @@ const Login = () => {
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Login</Text>
+          <Text style={styles.title}>Change your password</Text>
           <Text style={styles.subtitle}>
-            Synchronize your credentials to explore AutoPulse.
+            Provide your current and new password
           </Text>
 
           {error ? (
@@ -63,36 +67,7 @@ const Login = () => {
           ) : null}
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>STUDENT ID</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="car-outline"
-                size={20}
-                color="#89acff"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. 2025-0001"
-                placeholderTextColor="#6b7280"
-                value={studentId}
-                onChangeText={setStudentId}
-                autoCapitalize="characters"
-              />
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>PASSWORD</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  router.push("/(auth)/forgotPassword");
-                }}
-              >
-                <Text style={styles.forgotText}>FORGOT PASSWORD?</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.label}>CURRENT PASSWORD</Text>
             <View style={styles.inputContainer}>
               <Ionicons
                 name="lock-closed-outline"
@@ -104,16 +79,16 @@ const Login = () => {
                 style={styles.input}
                 placeholder="••••••••"
                 placeholderTextColor="#6b7280"
-                value={accessKey}
-                onChangeText={setAccessKey}
-                secureTextEntry={!showPassword}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                secureTextEntry={!showCurrentPassword}
               />
               <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
+                onPress={() => setShowCurrentPassword(!showCurrentPassword)}
                 style={styles.eyeIcon}
               >
                 <Ionicons
-                  name={showPassword ? "eye-outline" : "eye-off-outline"}
+                  name={showCurrentPassword ? "eye-outline" : "eye-off-outline"}
                   size={20}
                   color="#6b7280"
                 />
@@ -121,30 +96,60 @@ const Login = () => {
             </View>
           </View>
 
-          {/* Login Button */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>NEW PASSWORD</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color="#89acff"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor="#6b7280"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry={!showNewPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowNewPassword(!showNewPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showNewPassword ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color="#6b7280"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Change Password Button */}
           <TouchableOpacity
-            style={styles.buttonWrapper}
-            onPress={handleLogin}
+            style={[styles.buttonWrapper, isLoading && styles.buttonWrapperDisabled]}
+            onPress={handleChangePassword}
             disabled={isLoading}
+            activeOpacity={0.85}
           >
             {isLoading ? (
               <ActivityIndicator color="#0a0e14" />
             ) : (
-              <>
-                <Text style={styles.buttonText}>LOGIN</Text>
-                <Ionicons name="arrow-forward" size={20} color="#0a0e14" />
-              </>
+              <View style={styles.buttonContent}>
+                <Text style={styles.buttonText}>CHANGE PASSWORD</Text>
+                <View style={styles.buttonIconContainer}>
+                  <Ionicons name="arrow-forward" size={18} color="#0a0e14" />
+                </View>
+              </View>
             )}
           </TouchableOpacity>
 
-          {/* Register Link */}
           <View style={styles.registerContainer}>
             <Text style={styles.registerQuestion}>
-              Dont have an AutoPulse account?
+              Change your password to access all features and start managing
+              your vehicles with ease.
             </Text>
-            <TouchableOpacity onPress={() => router.push("/(auth)/sign-up")}>
-              <Text style={styles.registerLink}>Create new account</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -152,7 +157,7 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ChangePassword;
 
 const styles = StyleSheet.create({
   container: {
@@ -184,6 +189,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     letterSpacing: 2,
   },
+
   content: {
     flex: 1,
   },
@@ -191,7 +197,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "700",
     color: "#ffffff",
-    marginBottom: 12,
+    marginBottom: 2,
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -261,20 +267,34 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     marginBottom: 32,
     backgroundColor: "#89acff",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
     borderRadius: 16,
-    paddingVertical: 16,
+    minHeight: 56,
+    paddingHorizontal: 16,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(137, 172, 255, 0.25)",
+    shadowColor: "#89acff",
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
   },
-  button: {
-    height: 56,
-    borderRadius: 16,
+  buttonWrapperDisabled: {
+    opacity: 0.75,
+  },
+  buttonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
+  },
+  buttonIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(10, 14, 20, 0.14)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonText: {
     fontSize: 15,
@@ -289,6 +309,7 @@ const styles = StyleSheet.create({
   registerQuestion: {
     fontSize: 14,
     color: "#9ca3af",
+    textAlign: "center",
   },
   registerLink: {
     fontSize: 16,

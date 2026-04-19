@@ -1,7 +1,7 @@
-import { useAuth } from "@/context/AuthContext";
+import { forgetPassword } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -11,31 +11,30 @@ import {
   View,
 } from "react-native";
 
-const Login = () => {
-  const { login, isLoading, isAuthenticated, token } = useAuth();
+const ForgotPassword = () => {
   const [studentId, setStudentId] = useState("");
-  const [accessKey, setAccessKey] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      router.replace("/(public)");
-    }
-  }, [isAuthenticated, token]);
-
-  const handleLogin = async () => {
-    if (!studentId || !accessKey) {
+  const handleChangePassword = async () => {
+    if (!studentId) {
       setError("Please fill in all fields");
       return;
     }
 
     try {
+      setIsLoading(true);
       setError("");
-      await login(studentId, accessKey);
-      router.replace("/(public)");
+      const result = await forgetPassword(studentId);
+      setStudentId("");
+      router.replace({
+        pathname: "/(auth)/newPasswordResult",
+        params: { message: result.message },
+      });
     } catch (err) {
-      setError("Authentication failed. Please check your credentials.");
+      setError("Failed to change password. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -50,9 +49,9 @@ const Login = () => {
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Login</Text>
+          <Text style={styles.title}>Reset your password</Text>
           <Text style={styles.subtitle}>
-            Synchronize your credentials to explore AutoPulse.
+            Provide your student ID to reset your password
           </Text>
 
           {error ? (
@@ -73,78 +72,37 @@ const Login = () => {
               />
               <TextInput
                 style={styles.input}
-                placeholder="e.g. 2025-0001"
+                placeholder="e.g. ********"
                 placeholderTextColor="#6b7280"
                 value={studentId}
                 onChangeText={setStudentId}
                 autoCapitalize="characters"
+                secureTextEntry
               />
             </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>PASSWORD</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  router.push("/(auth)/forgotPassword");
-                }}
-              >
-                <Text style={styles.forgotText}>FORGOT PASSWORD?</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.inputContainer}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color="#89acff"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="••••••••"
-                placeholderTextColor="#6b7280"
-                value={accessKey}
-                onChangeText={setAccessKey}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-outline" : "eye-off-outline"}
-                  size={20}
-                  color="#6b7280"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Login Button */}
+          {/* Change Password Button */}
           <TouchableOpacity
             style={styles.buttonWrapper}
-            onPress={handleLogin}
+            onPress={handleChangePassword}
             disabled={isLoading}
           >
             {isLoading ? (
               <ActivityIndicator color="#0a0e14" />
             ) : (
               <>
-                <Text style={styles.buttonText}>LOGIN</Text>
+                <Text style={styles.buttonText}>RESET PASSWORD</Text>
                 <Ionicons name="arrow-forward" size={20} color="#0a0e14" />
               </>
             )}
           </TouchableOpacity>
 
-          {/* Register Link */}
           <View style={styles.registerContainer}>
             <Text style={styles.registerQuestion}>
-              Dont have an AutoPulse account?
+              Reset your password to access all features and start managing your
+              vehicles with ease.
             </Text>
-            <TouchableOpacity onPress={() => router.push("/(auth)/sign-up")}>
-              <Text style={styles.registerLink}>Create new account</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -152,7 +110,7 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;
 
 const styles = StyleSheet.create({
   container: {
@@ -184,6 +142,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     letterSpacing: 2,
   },
+
   content: {
     flex: 1,
   },
@@ -191,7 +150,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "700",
     color: "#ffffff",
-    marginBottom: 12,
+    marginBottom: 2,
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -289,6 +248,7 @@ const styles = StyleSheet.create({
   registerQuestion: {
     fontSize: 14,
     color: "#9ca3af",
+    textAlign: "center",
   },
   registerLink: {
     fontSize: 16,

@@ -1,5 +1,6 @@
+import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
-import { usePathname, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Modal,
@@ -10,17 +11,20 @@ import {
   View,
 } from "react-native";
 
-const AuthHeaderMenu = () => {
+const ProtectedHeaderMenu = () => {
   const [menuVisible, setMenuVisible] = useState(false);
-  const pathname = usePathname();
+  const { signOut } = useAuth();
   const router = useRouter();
-
-  const isLogin = pathname.includes("login");
-  const isSignUp = pathname.includes("sign-up");
 
   const handleNavigation = (route: string) => {
     setMenuVisible(false);
     router.push(route as any);
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    setMenuVisible(false);
+    router.push("/(auth)/login");
   };
 
   return (
@@ -45,67 +49,50 @@ const AuthHeaderMenu = () => {
           <View style={styles.menuContainer}>
             <View style={[styles.menuContent, styles.androidMenuBg]}>
               <TouchableOpacity
+                onPress={() => handleNavigation("/(protected)/profile")}
                 style={styles.menuItem}
-                onPress={() => handleNavigation("/(public)/about")}
               >
                 <Ionicons
-                  name="information-circle-outline"
+                  name="person-circle-outline"
                   size={20}
                   color="#89acff"
                 />
-                <Text style={styles.menuItemText}>About</Text>
+                <Text style={styles.menuItemText}>Profile</Text>
               </TouchableOpacity>
 
               <View style={styles.menuDivider} />
 
-              <Text style={styles.menuSection}>Authentication</Text>
+              <TouchableOpacity
+                onPress={() => handleNavigation("/(protected)/forum")}
+                style={styles.menuItem}
+              >
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={20}
+                  color="#89acff"
+                />
+                <Text style={styles.menuItemText}>Forum</Text>
+              </TouchableOpacity>
 
-              {isLogin && (
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={() => handleNavigation("/(auth)/sign-up")}
-                >
-                  <Ionicons
-                    name="person-add-outline"
-                    size={20}
-                    color="#89acff"
-                  />
-                  <Text style={styles.menuItemText}>Sign Up</Text>
-                </TouchableOpacity>
-              )}
+              <View style={styles.menuDivider} />
 
-              {isSignUp && (
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={() => handleNavigation("/(auth)/login")}
-                >
-                  <Ionicons name="log-in-outline" size={20} color="#89acff" />
-                  <Text style={styles.menuItemText}>Login</Text>
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                onPress={() => handleNavigation("/(public)")}
+                style={styles.menuItem}
+              >
+                <Ionicons name="home-outline" size={20} color="#89acff" />
+                <Text style={styles.menuItemText}>Home</Text>
+              </TouchableOpacity>
 
-              {!(isLogin && isSignUp) && (
-                <>
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigation("/(auth)/sign-up")}
-                  >
-                    <Ionicons
-                      name="person-add-outline"
-                      size={20}
-                      color="#89acff"
-                    />
-                    <Text style={styles.menuItemText}>Sign Up</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => handleNavigation("/(auth)/login")}
-                  >
-                    <Ionicons name="log-in-outline" size={20} color="#89acff" />
-                    <Text style={styles.menuItemText}>Login</Text>
-                  </TouchableOpacity>
-                </>
-              )}
+              <View style={styles.menuDivider} />
+
+              <TouchableOpacity
+                onPress={() => handleSignOut()}
+                style={styles.menuItem}
+              >
+                <Ionicons name="exit-outline" size={20} color="#c92828" />
+                <Text style={styles.menuItemText}>Log Out</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Pressable>
@@ -114,7 +101,7 @@ const AuthHeaderMenu = () => {
   );
 };
 
-export default AuthHeaderMenu;
+export default ProtectedHeaderMenu;
 
 const styles = StyleSheet.create({
   menuButton: {
