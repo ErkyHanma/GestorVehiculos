@@ -52,16 +52,6 @@ const About = () => {
             <Text style={styles.actionText}>Telefono: {member.phone}</Text>
           </TouchableOpacity>
 
-          {member.telegramUrl && (
-            <TouchableOpacity
-              style={styles.actionRow}
-              onPress={() => handleOpenTelegram(member.telegramUrl ?? "")}
-            >
-              <Ionicons name="paper-plane" size={18} color="#89acff" />
-              <Text style={styles.actionText}>Telegram</Text>
-            </TouchableOpacity>
-          )}
-
           <TouchableOpacity
             style={styles.actionRow}
             onPress={() => handleSendEmail(member.email)}
