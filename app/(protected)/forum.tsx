@@ -68,8 +68,14 @@ export default function ForumScreen() {
 
   useEffect(() => {
     fetchTopics();
-    fetchMyTopics();
     fetchVehicles();
+
+    fetchMyTopics();
+    const interval = setInterval(() => {
+      fetchMyTopics();
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchTopics = async () => {
@@ -300,6 +306,14 @@ function TopicDetailView({
 }) {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      onRefresh();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleReply = async () => {
     if (!reply.trim()) {
