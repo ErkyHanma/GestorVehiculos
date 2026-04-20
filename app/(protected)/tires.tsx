@@ -71,7 +71,7 @@ export default function TiresScreen() {
 
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [vehicles]);
 
   const fetchVehicles = async () => {
     try {
