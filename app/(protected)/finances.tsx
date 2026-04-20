@@ -114,7 +114,7 @@ export default function FinancesScreen() {
   useEffect(() => {
     fetchVehicles();
     fetchCategories();
-  }, []);
+  }, [vehicles, categories]);
 
   const fetchVehicles = async () => {
     try {

@@ -60,7 +60,7 @@ export default function FuelScreen() {
 
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [vehicles]);
 
   const fetchVehicles = async () => {
     try {

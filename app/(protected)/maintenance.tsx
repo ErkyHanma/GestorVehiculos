@@ -63,7 +63,7 @@ export default function MaintenanceScreen() {
 
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [vehicles]);
 
   const fetchVehicles = async () => {
     try {
