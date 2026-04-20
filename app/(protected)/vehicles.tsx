@@ -44,7 +44,7 @@ type VehicleDetail = Vehicle & {
 export default function VehiclesScreen() {
   const { token } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [selected, setSelected] = useState<VehicleDetail | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -68,18 +68,6 @@ export default function VehiclesScreen() {
     }
   };
 
-  const fetchDetail = async (id: number) => {
-    try {
-      const res = await fetch(`${API_BASE}/vehiculos/detalle?id=${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setSelected(data.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const handleSearch = (text: string) => {
     setSearch(text);
     fetchVehicles(text, "");
@@ -92,16 +80,15 @@ export default function VehiclesScreen() {
       </View>
     );
 
-  if (selected)
+  if (selectedId)
     return (
       <VehicleDetailView
-        vehicle={selected}
+        vehicleId={selectedId}
         token={token!}
         onBack={() => {
-          setSelected(null);
+          setSelectedId(null);
           fetchVehicles();
         }}
-        onRefresh={() => fetchDetail(selected.id)}
       />
     );
 
@@ -149,7 +136,7 @@ export default function VehiclesScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.vehicleCard}
-            onPress={() => fetchDetail(item.id)}
+            onPress={() => setSelectedId(item.id)}
           >
             <Image
               source={{ uri: item.foto_url }}
@@ -192,19 +179,42 @@ export default function VehiclesScreen() {
 
 // ─── Vehicle Detail View ──────────────────────────────────
 function VehicleDetailView({
-  vehicle,
+  vehicleId,
   token,
   onBack,
-  onRefresh,
 }: {
-  vehicle: VehicleDetail;
+  vehicleId: number;
   token: string;
   onBack: () => void;
-  onRefresh: () => void;
 }) {
+  const [vehicle, setVehicle] = useState<VehicleDetail | null>(null);
   const [showEdit, setShowEdit] = useState(false);
-  const r = vehicle.resumen;
-  const fotoUri = (vehicle as any).fotoUrl ?? vehicle.foto_url;
+  const [loading, setLoading] = useState(true);
+
+  const fetchDetail = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/vehiculos/detalle?id=${vehicleId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+      setVehicle(data.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDetail();
+
+    const interval = setInterval(() => {
+      fetchDetail();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleChangePhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -213,22 +223,36 @@ function VehicleDetailView({
       aspect: [16, 9],
       quality: 0.8,
     });
+
     if (!result.canceled) {
       const formData = new FormData();
-      formData.append("datax", JSON.stringify({ id: vehicle.id }));
+
+      formData.append("datax", JSON.stringify({ id: vehicleId }));
       formData.append("foto", {
         uri: result.assets[0].uri,
         name: "vehicle.jpg",
         type: "image/jpeg",
       } as any);
+
       await fetch(`${API_BASE}/vehiculos/foto`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-      onRefresh();
+
+      fetchDetail();
     }
   };
+
+  if (loading || !vehicle)
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator color="#89acff" size="large" />
+      </View>
+    );
+
+  const r = vehicle.resumen;
+  const fotoUri = (vehicle as any).fotoUrl ?? vehicle.foto_url;
 
   return (
     <ScrollView
@@ -242,6 +266,7 @@ function VehicleDetailView({
       {/* Photo */}
       <View style={styles.detailPhotoContainer}>
         <Image source={{ uri: fotoUri }} style={styles.detailPhoto} />
+
         <TouchableOpacity
           style={styles.changePhotoBtn}
           onPress={handleChangePhoto}
@@ -255,13 +280,16 @@ function VehicleDetailView({
       <View style={styles.detailTitleRow}>
         <View>
           <Text style={styles.detailInsightsLabel}>Vehicle Insights</Text>
+
           <Text style={styles.detailTitle}>
             {vehicle.marca} {vehicle.modelo}
           </Text>
+
           <Text style={styles.detailSubtitle}>
             {vehicle.anio} · {vehicle.placa}
           </Text>
         </View>
+
         <TouchableOpacity
           style={styles.editIconBtn}
           onPress={() => setShowEdit(true)}
@@ -274,12 +302,14 @@ function VehicleDetailView({
       <View style={styles.balanceCard}>
         <View>
           <Text style={styles.balanceLabel}>Overall Balance</Text>
+
           <Text style={styles.balanceValue}>
             RD${" "}
             {Math.abs(r.balance).toLocaleString("es-DO", {
               minimumFractionDigits: 2,
             })}
           </Text>
+
           <Text
             style={[
               styles.balanceTrend,
@@ -299,18 +329,21 @@ function VehicleDetailView({
           value={r.totalMantenimientos}
           negative
         />
+
         <FinancialCard
           icon="car-outline"
           label="Fuel"
           value={r.totalCombustible}
           negative
         />
+
         <FinancialCard
           icon="cash-outline"
           label="Income"
           value={r.totalIngresos}
           positive
         />
+
         <FinancialCard
           icon="document-text-outline"
           label="Other Expenses"
@@ -322,18 +355,22 @@ function VehicleDetailView({
       {/* Vehicle specs */}
       <View style={styles.specsCard}>
         <Text style={styles.specsTitle}>Vehicle Details</Text>
+
         <View style={styles.specsRow}>
           <SpecItem label="Chassis" value={vehicle.chasis} />
+
           <SpecItem
             label="Wheels"
             value={`${(vehicle as any).cantidadRuedas ?? vehicle.cantidad_ruedas}`}
           />
         </View>
+
         <View style={styles.specsRow}>
           <SpecItem
             label="Total Invested"
             value={`RD$ ${r.totalInvertido.toLocaleString("es-DO")}`}
           />
+
           <SpecItem
             label="Registered"
             value={
@@ -352,7 +389,7 @@ function VehicleDetailView({
           onClose={() => setShowEdit(false)}
           onSuccess={() => {
             setShowEdit(false);
-            onRefresh();
+            fetchDetail();
           }}
         />
       </Modal>
@@ -437,31 +474,40 @@ function VehicleForm({
   };
 
   const handleSave = async () => {
-    if (!form.placa || !form.marca || !form.modelo) {
-      Alert.alert("Error", "Plate, brand and model are required.");
-      return;
-    }
-
-    const year = Number(form.anio);
     const currentYear = new Date().getFullYear();
 
+    if (!form.placa.trim()) {
+      Alert.alert("Error", "Plate is required.");
+      return;
+    }
+    if (!form.chasis.trim()) {
+      Alert.alert("Error", "Chassis number is required.");
+      return;
+    }
+    if (!form.marca.trim()) {
+      Alert.alert("Error", "Brand is required.");
+      return;
+    }
+    if (!form.modelo.trim()) {
+      Alert.alert("Error", "Model is required.");
+      return;
+    }
+    if (!form.anio.trim()) {
+      Alert.alert("Error", "Year is required.");
+      return;
+    }
     if (!/^\d{4}$/.test(form.anio)) {
       Alert.alert("Error", "Year must be a 4-digit number.");
       return;
     }
 
-    if (!year || isNaN(year)) {
-      Alert.alert("Error", "Invalid year.");
-      return;
-    }
-
-    if (year < 1886 || year > currentYear) {
+    const year = Number(form.anio);
+    if (isNaN(year) || year < 1886 || year > currentYear) {
       Alert.alert("Error", `Year must be between 1886 and ${currentYear}.`);
       return;
     }
 
     const wheels = Number(form.cantidadRuedas);
-
     if (wheels < 2 || wheels > 18) {
       Alert.alert("Error", "Number of wheels must be between 2 and 18.");
       return;
@@ -473,7 +519,10 @@ function VehicleForm({
       formData.append(
         "datax",
         JSON.stringify({
-          ...form,
+          placa: form.placa.trim(),
+          chasis: form.chasis.trim(),
+          marca: form.marca.trim(),
+          modelo: form.modelo.trim(),
           anio: year,
           cantidadRuedas: wheels,
         }),
@@ -494,7 +543,6 @@ function VehicleForm({
       });
 
       const data = await res.json();
-
       if (data.success) {
         onSuccess();
       } else {
@@ -516,7 +564,6 @@ function VehicleForm({
         </TouchableOpacity>
       </View>
 
-      {/* Inputs */}
       {[
         { key: "placa", placeholder: "Plate (e.g. A123456)" },
         { key: "chasis", placeholder: "Chassis number" },
@@ -535,11 +582,9 @@ function VehicleForm({
         />
       ))}
 
-      {/* Selector */}
       <Text style={{ color: "#72757d", marginLeft: 16, marginTop: 16 }}>
         Number of wheels
       </Text>
-
       <View
         style={{ flexDirection: "row", flexWrap: "wrap", margin: 16, gap: 8 }}
       >
@@ -569,7 +614,6 @@ function VehicleForm({
         ))}
       </View>
 
-      {/* Photo */}
       <TouchableOpacity style={styles.photoPickerBtn} onPress={pickPhoto}>
         {photo ? (
           <Image source={{ uri: photo.uri }} style={styles.photoPreview} />
@@ -581,7 +625,6 @@ function VehicleForm({
         )}
       </TouchableOpacity>
 
-      {/* Button */}
       <TouchableOpacity
         style={[styles.saveBtn, saving && { opacity: 0.6 }]}
         onPress={handleSave}
@@ -617,20 +660,35 @@ function VehicleEditForm({
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    const year = Number(form.anio);
     const currentYear = new Date().getFullYear();
 
+    if (!form.placa.trim()) {
+      Alert.alert("Error", "Plate is required.");
+      return;
+    }
+    if (!form.chasis.trim()) {
+      Alert.alert("Error", "Chassis number is required.");
+      return;
+    }
+    if (!form.marca.trim()) {
+      Alert.alert("Error", "Brand is required.");
+      return;
+    }
+    if (!form.modelo.trim()) {
+      Alert.alert("Error", "Model is required.");
+      return;
+    }
+    if (!form.anio.trim()) {
+      Alert.alert("Error", "Year is required.");
+      return;
+    }
     if (!/^\d{4}$/.test(form.anio)) {
       Alert.alert("Error", "Year must be a 4-digit number.");
       return;
     }
 
-    if (!year || isNaN(year)) {
-      Alert.alert("Error", "Invalid year.");
-      return;
-    }
-
-    if (year < 1886 || year > currentYear) {
+    const year = Number(form.anio);
+    if (isNaN(year) || year < 1886 || year > currentYear) {
       Alert.alert("Error", `Year must be between 1886 and ${currentYear}.`);
       return;
     }
@@ -646,17 +704,16 @@ function VehicleEditForm({
         body: `datax=${encodeURIComponent(
           JSON.stringify({
             id: vehicle.id,
-            placa: form.placa,
-            chasis: form.chasis,
-            marca: form.marca,
-            modelo: form.modelo,
+            placa: form.placa.trim(),
+            chasis: form.chasis.trim(),
+            marca: form.marca.trim(),
+            modelo: form.modelo.trim(),
             anio: year,
           }),
         )}`,
       });
 
       const data = await res.json();
-
       if (data.success) {
         onSuccess();
       } else {
