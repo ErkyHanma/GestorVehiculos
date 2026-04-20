@@ -48,18 +48,19 @@ export default function VehiclesScreen() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
 
   useEffect(() => {
     fetchVehicles();
   }, []);
 
-  const fetchVehicles = async (marca = "", modelo = "") => {
+  const fetchVehicles = async () => {
     try {
-      const res = await fetch(
-        `${API_BASE}/vehiculos?marca=${marca}&modelo=${modelo}&page=1&limit=20`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const res = await fetch(`${API_BASE}/vehiculos?page=1&limit=100`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
+      setAllVehicles(data.data ?? []);
       setVehicles(data.data ?? []);
     } catch (err) {
       console.error(err);
@@ -70,7 +71,19 @@ export default function VehiclesScreen() {
 
   const handleSearch = (text: string) => {
     setSearch(text);
-    fetchVehicles(text, "");
+    const query = text.trim().toLowerCase();
+    if (!query) {
+      setVehicles(allVehicles);
+      return;
+    }
+    setVehicles(
+      allVehicles.filter(
+        (v) =>
+          v.marca.toLowerCase().includes(query) ||
+          v.modelo.toLowerCase().includes(query) ||
+          v.placa.toLowerCase().includes(query),
+      ),
+    );
   };
 
   if (loading)
