@@ -846,7 +846,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#151a21",
     borderRadius: 12,
-    padding: 12,
+    padding: 7,
     borderWidth: 1,
     borderColor: "#20262f",
     borderLeftWidth: 3,
@@ -859,8 +859,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginBottom: 4,
   },
-  statValueSmall: { fontSize: 13, fontWeight: "bold" },
-
+  statValueSmall: {
+    fontSize: 12,
+    fontWeight: "bold",
+  },
   tabRow: {
     flexDirection: "row",
     marginHorizontal: 16,
