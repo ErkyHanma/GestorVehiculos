@@ -311,22 +311,20 @@ export default function MaintenanceScreen() {
               ) : null}
 
               {item.fotos?.length > 0 && (
-                <Text style={styles.cardPhotos}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 4,
-                      marginTop: 6,
-                    }}
-                  >
-                    <Ionicons name="camera-outline" size={12} color="#ffb7fc" />
-                    <Text style={styles.cardPhotos}>
-                      {item.fotos.length} photo
-                      {item.fotos.length > 1 ? "s" : ""}
-                    </Text>
-                  </View>
-                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                    marginTop: 6,
+                  }}
+                >
+                  <Ionicons name="camera-outline" size={12} color="#ffb7fc" />
+                  <Text style={styles.cardPhotos}>
+                    {item.fotos.length} photo
+                    {item.fotos.length > 1 ? "s" : ""}
+                  </Text>
+                </View>
               )}
             </TouchableOpacity>
           )}
