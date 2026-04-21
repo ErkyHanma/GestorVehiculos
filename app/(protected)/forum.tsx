@@ -68,8 +68,14 @@ export default function ForumScreen() {
 
   useEffect(() => {
     fetchTopics();
-    fetchMyTopics();
     fetchVehicles();
+
+    fetchMyTopics();
+    const interval = setInterval(() => {
+      fetchMyTopics();
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchTopics = async () => {
@@ -148,7 +154,10 @@ export default function ForumScreen() {
         </View>
         <TouchableOpacity
           style={styles.createBtn}
-          onPress={() => setShowCreateModal(true)}
+          onPress={async () => {
+            await fetchVehicles();
+            setShowCreateModal(true);
+          }}
         >
           <Ionicons name="add-circle-outline" size={16} color="#002b6a" />
           <Text style={styles.createBtnText}>Create Topic</Text>
@@ -297,6 +306,14 @@ function TopicDetailView({
 }) {
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      onRefresh();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleReply = async () => {
     if (!reply.trim()) {
