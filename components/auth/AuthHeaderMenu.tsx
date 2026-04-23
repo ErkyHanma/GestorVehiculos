@@ -44,20 +44,6 @@ const AuthHeaderMenu = () => {
         >
           <View style={styles.menuContainer}>
             <View style={[styles.menuContent, styles.androidMenuBg]}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleNavigation("/(public)/about")}
-              >
-                <Ionicons
-                  name="information-circle-outline"
-                  size={20}
-                  color="#89acff"
-                />
-                <Text style={styles.menuItemText}>About</Text>
-              </TouchableOpacity>
-
-              <View style={styles.menuDivider} />
-
               <Text style={styles.menuSection}>Authentication</Text>
 
               {isLogin && (
